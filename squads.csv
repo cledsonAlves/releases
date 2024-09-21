@@ -1,8 +1,9 @@
 squad;modulo
 Formalização Remota;ionFormalizacaoRemota
-- Squad : VITRINE - ANDROID;ionContratacaoResgate
+Contratação Resgate;ionContratacaoResgate
 Conteudo;ionConteudo
 Sala de Integracao;ionNavigation
-Squad : VITRINE - ANDROID;ionOnboarding
+onbording;ionOnboarding
 Pix;ionPix
-Vitrine;ionvitrine
+Vitrine;ionVitrine
+
