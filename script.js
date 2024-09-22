@@ -1,7 +1,7 @@
 const TOKEN = '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';
 const OWNER = 'cledsonAlves';
 const REPO = 'releases';
-const LABEL_PREFIX = 'start:'; // Prefixo da label que contém o SLA
+const LABEL_PREFIX = 'start:'; //
 const ISSUE_NUMBER = 6;
 let tableBody;
 let postmortemTableBody;
