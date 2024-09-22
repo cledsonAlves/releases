@@ -1,4 +1,4 @@
-const TOKEN = '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';
+const TOKEN = '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';
 const OWNER = 'cledsonAlves';
 const REPO = 'releases';
 const LABEL_PREFIX = 'start:'; //
