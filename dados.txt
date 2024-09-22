@@ -1,0 +1,1 @@
+consuma a api do github , lendo as issues com label [Android]-R100 , no body da issue faça um de para com o .csv, se a squad estiver no .csv , monte uma tabela nova na tela para o usuario contendo squad e modulo , use esse token para chamada api : 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

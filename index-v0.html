@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Squad Module Table</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f6f9;
+      color: #333;
+    }
+
+    .container {
+      display: flex;
+      padding: 20px;
+      gap: 20px;
+    }
+
+    .left-side {
+      flex: 1;
+      background-color: #fff;
+      padding: 20px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+    }
+
+    #versionInfo {
+      font-size: 1rem;
+      margin-bottom: 10px;
+      text-align: center;
+      color: #666;
+    }
+
+    #releaseNotes {
+      background-color: #e8f4ff;
+      border: 1px solid #b8daff;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+
+    #releaseNotes h3 {
+      color: #004085;
+      margin-top: 0;
+    }
+
+    #releaseNotes p {
+      color: #004085;
+      margin-bottom: 0;
+    }
+
+    #slaClock {
+      font-weight: bold;
+      font-size: 1.2rem;
+      margin-bottom: 30px;
+      text-align: center;
+      padding: 10px;
+      background-color: #f0f0f0;
+      border-radius: 5px;
+    }
+
+    #chatSupport {
+      margin-bottom: 20px;
+    }
+
+    #chatHeader {
+      font-size: 1.1rem;
+      font-weight: 500;
+      margin-bottom: 10px;
+      color: #444;
+    }
+
+    #chatBody {
+      height: 300px;
+      padding: 10px;
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      margin-bottom: 10px;
+      overflow-y: auto;
+    }
+
+    #chatInputArea {
+      display: flex;
+      gap: 10px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 1rem;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #fff;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    th, td {
+      padding: 12px 15px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #007bff;
+      color: white;
+      font-weight: bold;
+    }
+
+    tbody tr:hover {
+      background-color: #f1f1f1;
+    }
+
+    .status-info {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #fff;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      text-align: center;
+      display: flex;
+      justify-content: space-around;
+      gap: 20px;
+    }
+
+    .status-item {
+      font-size: 1.1rem;
+      font-weight: bold;
+    }
+
+    .user-message, .assistant-message {
+      padding: 8px 12px;
+      margin-bottom: 8px;
+      border-radius: 8px;
+      max-width: 80%;
+    }
+
+    .user-message {
+      background-color: #007bff;
+      color: white;
+      align-self: flex-end;
+      margin-left: auto;
+    }
+
+    .assistant-message {
+      background-color: #e9ecef;
+      color: #333;
+      align-self: flex-start;
+    }
+
+    .table-title {
+      font-size: 1.2rem;
+      font-weight: 500;
+      margin-bottom: 10px;
+      color: #007bff;
+    }
+
+    @media screen and (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+
+      table {
+        font-size: 0.9rem;
+      }
+
+      button {
+        font-size: 0.9rem;
+      }
+
+      .status-info {
+        flex-direction: column;
+        gap: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="left-side">
+    <div id="versionInfo">Versão: 1.0.0 | Release: 2024.1</div>
+
+    <div id="releaseNotes">
+      <h3>Release Notes</h3>
+      <p>O íon Itaú está sempre melhorando por você.</p>
+      <p>Implementamos notificações personalizadas. Acompanhe a rentabilidade acumulada da sua carteira e compare com benchmarks.</p>
+      <p>Atualize o app e confira!</p>
+    </div>
+
+    <div id="slaClock">Tempo restante para o término: 24:00:00</div>
+
+    <div id="chatSupport">
+      <div id="chatHeader">Assistente Virtual - Dúvidas e Postmortem</div>
+      <div id="chatBody"></div>
+      <div id="chatInputArea">
+        <input type="text" id="chatInput" placeholder="Digite sua mensagem..." />
+        <button id="sendButton">Enviar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="right-side">
+    <div class="table-title">Squads particpantes desta Release</div>
+    <table id="squadTable">
+      <thead>
+      <tr>
+        <th>Número da Squad</th>
+        <th>Status</th>
+        <th>Squad (da Issue)</th>
+        <th>Módulo (da Issue)</th>
+        <th>Detalhe da Entrega</th>
+        <th>Ações</th>
+      </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <div class="table-title">Painel de Bugs</div>
+    <table id="postmortemTable">
+      <thead>
+      <tr>
+        <th>Squad</th>
+        <th>Bug</th>
+        <th>Testado em Homologação</th>
+      </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="status-info">
+  <div class="status-item">Não Iniciados: <span id="totalNaoIniciados">0</span></div>
+  <div class="status-item">Em Andamento: <span id="totalEmAndamento">0</span></div>
+  <div class="status-item">Finalizados: <span id="totalFinalizados">0</span></div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
