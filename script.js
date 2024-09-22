@@ -184,13 +184,14 @@ async function updateIssue6Content(content) {
             'Authorization': `Bearer ${TOKEN_GENERIC}`,
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ body: content })
+        body: JSON.stringify({ body: content }) // Envia o conteúdo atualizado da issue
     });
 
     if (!response.ok) {
         throw new Error('Falha ao atualizar o conteúdo da issue');
     }
 }
+
 
 // Adicione logs para debug
 function addDebugLog(message) {
@@ -208,10 +209,9 @@ async function fetchIssuesWithLabel() {
 }
 
 function createTableFromIssues(issues, squads) {
-    tableBody.innerHTML = '';
+    tableBody.innerHTML = '';  // Limpa o conteúdo anterior da tabela
     let rowsAdded = 0;
 
-    // Usar um conjunto para armazenar combinações únicas de módulo + squad
     const linhasAdicionadas = new Set();
 
     issues.forEach(issue => {
@@ -221,45 +221,34 @@ function createTableFromIssues(issues, squads) {
         const modulo = moduleMatch ? moduleMatch[1].trim() : 'Não especificado';
         const issueSquad = squadMatch ? squadMatch[1].trim() : 'Não especificado';
 
-        addDebugLog(`Processando issue: ${issue.number}, Módulo: ${modulo}, Squad: ${issueSquad}`);
-
-        // Verificar se o módulo aparece no CSV e pegar todas as squads associadas
         const squadsAssociadas = Object.entries(squads).filter(([_, modulos]) => modulos.includes(modulo));
 
-        // Para cada squad encontrada no CSV com o mesmo módulo, adicionamos uma nova linha na tabela se ainda não foi adicionada
         squadsAssociadas.forEach(([csvSquad]) => {
             const chaveUnica = `${modulo}-${csvSquad}`;
 
-            // Verificar se a combinação já foi adicionada ao conjunto
             if (!linhasAdicionadas.has(chaveUnica)) {
-                addDebugLog(`Adicionando linha para o módulo ${modulo} e squad ${csvSquad}`);
-
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td>${issue.number}</td>
-                    <td>Não Iniciado</td>
-                    <td>${csvSquad}</td>  <!-- Squad do CSV -->
-                    <td>${modulo}</td>
-                    <td class="delivery-detail">Nada a declarar</td>
-                    <td><button class="edit-button">Editar</button></td>
+                    <td>${csvSquad}</td>   <!-- Squad -->
+                    <td>${modulo}</td>     <!-- Módulo -->
+                    <td class="delivery-detail">Nada a declarar</td> <!-- Detalhe da Entrega -->
+                    <td><span>Não Iniciado</span></td> <!-- Status -->
+                    <td><button class="edit-button">Editar</button></td> <!-- Botão Editar na coluna de Ações -->
                 `;
 
-                applyStatusColor(tr, 'Não Iniciado');
-                addEditButtonListener(tr);
+                applyStatusColor(tr, 'Não Iniciado');  // Aplica a cor conforme o status
+                addEditButtonListener(tr);  // Adiciona o listener de edição
                 tableBody.appendChild(tr);
                 rowsAdded++;
 
-                // Adiciona a combinação única ao conjunto para evitar duplicações
-                linhasAdicionadas.add(chaveUnica);
-            } else {
-                addDebugLog(`Linha duplicada ignorada para a combinação ${chaveUnica}`);
+                linhasAdicionadas.add(chaveUnica);  // Marca a linha como já adicionada para evitar duplicação
             }
         });
     });
 
-    addDebugLog(`Linhas adicionadas à tabela: ${rowsAdded}`);
     updateStatusTotals();
 }
+
 
 
 
@@ -276,10 +265,9 @@ function checkSquadInclusion(issueSquad, issueModule, squads) {
     }
     return false;
 }
-
 function loadTableFromIssue6(content) {
     const lines = content.split('\n');
-    const tableStartIndex = lines.findIndex(line => line.includes('| Número da Squad | Status |'));
+    const tableStartIndex = lines.findIndex(line => line.includes('| Squad | Módulo | Detalhe da Entrega | Status |'));
 
     if (tableStartIndex === -1) {
         console.log('Tabela não encontrada na issue 6.');
@@ -290,17 +278,16 @@ function loadTableFromIssue6(content) {
 
     for (let i = tableStartIndex + 2; i < lines.length; i++) {
         const line = lines[i].trim();
-        if (line === '') break;
+        if (line === '' || line.startsWith('##')) break; // Termina se encontrar uma linha vazia ou um novo cabeçalho
 
-        const [number, status, squad, modulo, detalheEntrega] = line.split('|').slice(1, -1).map(cell => cell.trim());
+        const [squad, modulo, detalheEntrega, status] = line.split('|').slice(1, -1).map(cell => cell.trim());
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${number}</td>
-            <td>${status}</td>
             <td>${squad}</td>
             <td>${modulo}</td>
             <td class="delivery-detail">${detalheEntrega}</td>
+            <td><span>${status}</span></td>
             <td><button class="edit-button">Editar</button></td>
         `;
 
@@ -348,10 +335,10 @@ function addEditButtonListener(row) {
     }
 }
 
-async function toggleEditRow(button) {
+function toggleEditRow(button) {
     const row = button.closest('tr');
-    const statusCell = row.cells[1];
-    const detailCell = row.cells[4];
+    const statusCell = row.cells[3]; // A célula de Status é a 4ª coluna
+    const statusText = statusCell.querySelector('span');
 
     if (button.innerText === 'Editar') {
         const statusSelect = document.createElement('select');
@@ -359,46 +346,46 @@ async function toggleEditRow(button) {
             const option = document.createElement('option');
             option.value = optionValue;
             option.text = optionValue;
-            if (statusCell.innerText === optionValue) {
+            if (statusText.innerText === optionValue) {
                 option.selected = true;
             }
             statusSelect.appendChild(option);
         });
-        statusCell.innerHTML = '';
+
+        statusCell.innerHTML = ''; // Limpa a célula de Status
         statusCell.appendChild(statusSelect);
-
-        const detailInput = document.createElement('textarea');
-        detailInput.value = detailCell.innerText.trim();
-        detailCell.innerHTML = '';
-        detailCell.appendChild(detailInput);
-
-        button.innerText = 'Salvar';
+        button.innerText = 'Salvar';  // Muda o texto do botão para "Salvar"
     } else {
         const statusSelect = statusCell.querySelector('select');
-        const detailInput = detailCell.querySelector('textarea');
+        const newStatus = statusSelect.value;
 
-        statusCell.innerHTML = statusSelect.value;
-        detailCell.innerHTML = detailInput.value;
+        // Atualiza a célula de status com o novo valor
+        statusCell.innerHTML = `<span>${newStatus}</span>`;
+        button.innerText = 'Editar';  // Muda o texto de volta para "Editar"
 
-        applyStatusColor(row, statusSelect.value);
-
-        button.innerText = 'Editar';
+        // Aplica a cor correspondente ao novo status
+        applyStatusColor(row, newStatus);
         updateStatusTotals();
 
-        await saveRowToIssue6(row);
+        // Salva a alteração na issue
+        saveRowToIssue6(row);
     }
 }
 
+
+
+
 async function saveRowToIssue6(row) {
     try {
-        const issueContent = await getIssue6Content();
-        const updatedContent = updateTableRowInContent(issueContent, row);
-        await updateIssue6Content(updatedContent);
+        const issueContent = await getIssue6Content(); // Pega o conteúdo atual da issue
+        const updatedContent = updateTableRowInContent(issueContent, row); // Atualiza o conteúdo com a nova linha
+        await updateIssue6Content(updatedContent); // Salva a issue com o conteúdo atualizado
         console.log('Alterações de linha salvas com sucesso na issue 6.');
     } catch (error) {
         console.error(`Erro ao salvar alterações de linha na issue: ${error.message}`);
     }
 }
+
 
 // Funções para salvar e atualizar conteúdo da tabela
 async function saveFullTableToIssue6() {
@@ -414,28 +401,51 @@ async function saveFullTableToIssue6() {
         console.error(`Erro ao salvar tabela na issue 6: ${error.message}`);
     }
 }
+async function saveFullTableToIssue6() {
+    try {
+        const tableContent = generateFullTableContent();
+        if (tableContent.trim() === '') {
+            console.error('A tabela está vazia. Não será salva na issue 6.');
+            return;
+        }
+        const currentContent = await getIssue6Content();
+        const updatedContent = updateTableContentInIssue(currentContent, tableContent);
+        await updateIssue6Content(updatedContent);
+        console.log('Tabela salva com sucesso na issue 6.');
+    } catch (error) {
+        console.error(`Erro ao salvar tabela na issue 6: ${error.message}`);
+    }
+}
 
 function generateFullTableContent() {
-    let tableContent = "| Número da Squad | Status | Squad (da Issue) | Módulo (da Issue) | Detalhe da Entrega |\n";
-    tableContent += "|------------------|--------|-------------------|--------------------|--------------------|";
+    let tableContent = "| Squad | Módulo | Detalhe da Entrega | Status |\n";
+    tableContent += "|-------|--------|---------------------|--------|";
 
     const rows = tableBody.querySelectorAll('tr');
-    addDebugLog(`Número de linhas na tabela: ${rows.length}`);
-
-    if (rows.length === 0) {
-        addDebugLog('Nenhuma linha encontrada na tabela.');
-        return '';
-    }
-
     rows.forEach(row => {
         const cells = row.cells;
-        if (cells.length >= 5) {
-            tableContent += `\n| ${cells[0].innerText} | ${cells[1].innerText} | ${cells[2].innerText} | ${cells[3].innerText} | ${cells[4].innerText} |`;
+        if (cells.length >= 4) {
+            tableContent += `\n| ${cells[0].innerText} | ${cells[1].innerText} | ${cells[2].innerText} | ${cells[3].innerText} |`;
         }
     });
 
-    addDebugLog(`Conteúdo da tabela gerado: ${tableContent}`);
     return tableContent;
+}
+
+function updateTableContentInIssue(currentContent, newTableContent) {
+    const lines = currentContent.split('\n');
+    const tableStartIndex = lines.findIndex(line => line.includes('| Squad | Módulo | Detalhe da Entrega | Status |'));
+    const tableEndIndex = lines.findIndex((line, index) => index > tableStartIndex && (line.trim() === '' || line.startsWith('##')));
+
+    if (tableStartIndex === -1) {
+        // Se a tabela não existir, adiciona-a ao final do conteúdo
+        return currentContent + '\n\n' + newTableContent;
+    } else {
+        // Substitui a tabela existente pela nova
+        const beforeTable = lines.slice(0, tableStartIndex).join('\n');
+        const afterTable = tableEndIndex !== -1 ? lines.slice(tableEndIndex).join('\n') : '';
+        return beforeTable + '\n' + newTableContent + '\n' + afterTable;
+    }
 }
 
 // Função para adicionar logs de debug
@@ -445,37 +455,43 @@ function addDebugLog(message) {
 
 function updateTableRowInContent(content, updatedRow) {
     const lines = content.split('\n');
-    const tableStartIndex = lines.findIndex(line => line.includes('| Número da Squad | Status |'));
+    const tableStartIndex = lines.findIndex(line => line.includes('| Squad | Módulo | Detalhe da Entrega | Status |'));
 
     if (tableStartIndex === -1) {
-        return content + '\n\n' + generateFullTableContent();
+        return content; // Se não encontrar a tabela, não faz nada
     }
 
-    const updatedCells = Array.from(updatedRow.cells).map(cell => cell.innerText);
+    const updatedCells = Array.from(updatedRow.cells).map(cell => cell.innerText.trim());
+    const squadName = updatedCells[0]; // Assume que o nome da squad está na primeira coluna
+
     const updatedRowIndex = lines.findIndex((line, index) =>
-        index > tableStartIndex && line.includes(`| ${updatedCells[0]} |`)
+        index > tableStartIndex && line.includes(`| ${squadName} |`)
     );
 
     if (updatedRowIndex !== -1) {
-        lines[updatedRowIndex] = `| ${updatedCells.join(' | ')} |`;
-    } else {
-        lines.push(`| ${updatedCells.join(' | ')} |`);
+        // Atualiza a linha na issue com os novos valores da tabela
+        lines[updatedRowIndex] = `| ${updatedCells.slice(0, 4).join(' | ')} |`; // Exclui a coluna de ações
     }
 
     return lines.join('\n');
 }
 
+
 // Funções auxiliares
 function applyStatusColor(row, status) {
-    row.classList.remove('row-in-progress', 'row-completed', 'row-blocked');
+    const statusCell = row.cells[3]; // A célula de Status agora é a 4ª coluna
+    statusCell.style.backgroundColor = ''; // Resetar cor antes de aplicar a nova
+
     if (status === 'Em andamento') {
-        row.classList.add('row-in-progress');
+        statusCell.style.backgroundColor = 'orange'; // Laranja para "Em andamento"
     } else if (status === 'Finalizado') {
-        row.classList.add('row-completed');
+        statusCell.style.backgroundColor = 'green'; // Verde para "Finalizado"
     } else if (status === 'Bloqueado') {
-        row.classList.add('row-blocked');
+        statusCell.style.backgroundColor = 'yellow'; // Amarelo para "Bloqueado"
     }
 }
+
+
 
 function updateStatusTotals() {
     let totalNaoIniciados = 0;
