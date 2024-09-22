@@ -1,26 +1,26 @@
 01 - SQUAD FORMALIZAÇÃO REMOTA;ionCledson
-02 - SQUAD CORRETORA ACOMPANHAMENTO DE RV;ionContratacaoResgate
-03 - TRANSACIONAL DE RENDA VARIÁVEL;ionContratacaoResgate
-04 - SQUAD FOUNDATION;ionContratacaoResgate
-05 - SQUAD CONTEÚDO E HUMANIZAÇÃO;ionContratacaoResgate-2.3.0
-06 - SQUAD CONTRAT E RESGATE DE FUNDOS CANAIS PF;ionContratacaoResgate-2.3.0
-07 - ACOMPAN. CANAIS FRONT RENTABILIDADE;ionContratacaoResgate-2.3.0
-08 - SQUAD VITRINE RF FUNDOS E PREV;ionContratacaoResgate-2.3.0
-09 - SQUAD VITRINE RV COE;ionContratacaoResgate
-10 - SQUAD AGREGADOR;ionContratacaoResgate
+02 - SQUAD CORRETORA ACOMPANHAMENTO DE RV;ionCorretora
+03 - TRANSACIONAL DE RENDA VARIÁVEL;ionCorretoraTransacional
+04 - SQUAD FOUNDATION;ionApp
+05 - SQUAD CONTEÚDO E HUMANIZAÇÃO;ionConteudo
+06 - SQUAD CONTRAT E RESGATE DE FUNDOS CANAIS PF;ionContratacaoResgate-2.7.0
+07 - ACOMPAN. CANAIS FRONT RENTABILIDADE;ionContratacaoResgate-2.5.0
+08 - SQUAD VITRINE RF FUNDOS E PREV;ionVitrine
+09 - SQUAD VITRINE RV COE;ionVitrine
+10 - SQUAD AGREGADOR;ionAgregador
 11 - SQUAD CONTRAT E RESGATE DE TESOURO;ionContratacaoResgate
-12 - SQUAD VISÃO MERCADO FRONT;ionContratacaoResgate
-13 - SQUAD ASSESSORIA EVERYWHERE (antes Edith);ionContratacaoResgate
-14 - SQUAD CONEXÃO CARTEIRA (antes FRIDAY);ionContratacaoResgate
-15 - SQUAD ONBOARDING;ionContratacaoResgate
+12 - SQUAD VISÃO MERCADO FRONT;ionContextualizacao
+13 - SQUAD ASSESSORIA EVERYWHERE (antes Edith);ionAssessoria
+14 - SQUAD CONEXÃO CARTEIRA (antes FRIDAY);ionAssessoria
+15 - SQUAD ONBOARDING;ionOnboarding
 16 - SQUAD ALOCAÇÃO E REALOCAÇÃO DE INVEST. (antes VISION);
-17 - SQUAD INTEGRACAO ION;ionContratacaoResgate
+17 - SQUAD INTEGRACAO ION;ionAuthenticator
 18 - CONTRATACAO E RESGATE RENDA FIXA;ionContratacaoResgate
-19 - SQUAD PIX CONTA ION;ionContratacaoResgate
+19 - SQUAD PIX CONTA ION;ionPix
 20 - CONTRATAÇÃO E RESGATE DE TESOURARIA;ionContratacaoResgate
-21 - GROWTH;ionContratacaoResgate
-21 - PLATAFORMA DIGITAL AINVEST;ionContratacaoResgate
-22 - SQUAD CONCIERGE DIGITAL (antes STARK);ionContratacaoResgate
-23 - CRIPTO;ionContratacaoResgate
+21 - GROWTH;ionGrowth
+21 - PLATAFORMA DIGITAL AINVEST;ionAssessoria
+22 - SQUAD CONCIERGE DIGITAL (antes STARK);ionStark
+23 - CRIPTO;ionCripto
 24 - SQUAD PERFIL DO CLIENTE;
 25 - TIME ACESSIBILIDADE;todos
