@@ -1,8 +1,12 @@
-const TOKEN = '';
+
+const TOKEN_GENERIC = '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';
+
 const OWNER = 'cledsonAlves';
 const REPO = 'releases';
-const LABEL_PREFIX = 'start:'; //
+const LABEL = '[Android]-R100';
 const ISSUE_NUMBER = 6;
+const REPO_DOCS = 'cledsonAlves/releases';
+const REPO_ISSUES = 'cledsonAlves/releases';
 let tableBody;
 let postmortemTableBody;
 
@@ -26,38 +30,67 @@ async function main() {
     }
 }
 
-// Função para obter conteúdo da issue
+// Função para verificar se squads de um módulo precisam testar
+function verificarSquadsParaTestar(squads, modulo) {
+    // Verifica se alguma squad do módulo teve entrega
+    const moduloTemEntrega = squads.some(squad => squad.modulo === modulo && squad.entrega === true);
+
+    // Se o módulo teve entrega, todas as squads do módulo precisam testar
+    if (moduloTemEntrega) {
+        squads.forEach(squad => {
+            if (squad.modulo === modulo) {
+                console.log(`${squad.nome} precisa testar porque houve entrega no módulo ${modulo}.`);
+            }
+        });
+    }
+}
+
+// Função para carregar e criar a tabela
+async function loadIssuesAndCreateTable() {
+    const issues = await fetchIssuesWithLabel();
+
+    // Criar tabela a partir das issues
+    createTableFromIssues(issues);
+
+    // Após a criação da tabela, verificar se squads de um mesmo módulo precisam testar
+    const squads = [
+        { nome: 'Squad : FORMALIZACAO REMOTA - ANDROID', modulo: 'FORMALIZACAO', entrega: true },
+        { nome: 'SQUAD CORRETORA ACOMPANHAMENTO DE RV', modulo: 'RV', entrega: false },
+        { nome: 'TRANSAÇÃO DE RENDA VARIÁVEL', modulo: 'RV', entrega: true },
+        { nome: 'SQUAD FOUNDATION', modulo: 'FOUNDATION', entrega: true },
+        { nome: 'SQUAD CONTEÚDO E HUMANIZAÇÃO', modulo: 'CONTENT_HUMANIZATION', entrega: true },
+        { nome: 'SQUAD CONTRAT E RESGATE DE FUNDOS CANAIS', modulo: 'FUNDOS', entrega: false },
+        // Adicione mais squads conforme necessário
+    ];
+
+    const modulos = [...new Set(squads.map(squad => squad.modulo))];
+    modulos.forEach(modulo => verificarSquadsParaTestar(squads, modulo));
+
+    await saveFullTableToIssue6();
+}
+
+
 async function getIssue6Content() {
-    const response = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/issues/${ISSUE_NUMBER}`, {
-        headers: { 'Authorization': `Bearer ${TOKEN}` }
+    const response = await fetch(`https://api.github.com/repos/cledsonAlves/releases/issues/${ISSUE_NUMBER}`, {
+        headers: { 'Authorization': `Bearer ${TOKEN_GENERIC}` }
     });
     const issueData = await response.json();
     const bodyContent = issueData.body || '';
 
-    // Procurar a label que começa com o prefixo 'start:'
-    const startLabel = issueData.labels.find(label => label.name.startsWith(LABEL_PREFIX));
+    // Extrair o valor de start:YYYY-MM-DDTHH:MM:SS
+    const startTimeMatch = bodyContent.match(/start:(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})/);
 
-    if (startLabel) {
-        const startTimeString = startLabel.name.substring(LABEL_PREFIX.length);
-        const startTime = new Date(startTimeString);
+    if (startTimeMatch) {
+        const startTime = new Date(startTimeMatch[1]);
 
-        if (!isNaN(startTime)) {
-            // Armazenar o tempo de início no localStorage
-            localStorage.setItem('slaStartTime', startTime.toISOString());
+        // Armazenar o tempo de início no localStorage
+        localStorage.setItem('slaStartTime', startTime.toISOString());
 
-            // Calcular o tempo restante do SLA e atualizar a interface imediatamente
-            const remainingSLA = calculateRemainingSLA(startTime);
-            if (remainingSLA > 0) {
-                startSLAClock(remainingSLA);
-            } else {
-                document.getElementById('slaClock').textContent = 'Tempo esgotado!';
-                disableEditButtons();
-            }
-        } else {
-            console.error("Erro: Data de início da label 'start' é inválida.");
-        }
+        // Calcular o tempo restante do SLA
+        const remainingSLA = calculateRemainingSLA(startTime);
+        startSLAClock(remainingSLA);
     } else {
-        console.error("Erro: Label 'start' não encontrada na issue.");
+        console.error("Erro: Label 'start' não encontrada no conteúdo da issue.");
     }
 
     return bodyContent;
@@ -75,6 +108,7 @@ function calculateRemainingSLA(startTime) {
 function startSLAClock(duration) {
     let timer = duration;
     const clockElement = document.getElementById('slaClock');
+    let clockInterval; // Declare clockInterval here
 
     function updateClock() {
         const hours = Math.floor(timer / 3600);
@@ -83,29 +117,14 @@ function startSLAClock(duration) {
 
         clockElement.textContent = `Tempo restante para o término: ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 
-        // Quando o tempo restante for menor que 10 minutos, mudar a cor para vermelho
-        if (timer <= 10 * 60) {
-            clockElement.style.color = 'red';
-        }
-
-        // Quando o tempo acabar, desabilitar os botões
         if (--timer < 0) {
             clockElement.textContent = 'Tempo esgotado!';
             clearInterval(clockInterval);
-            disableEditButtons();
         }
     }
 
-    updateClock(); // Chamar imediatamente para exibir o tempo correto
-    const clockInterval = setInterval(updateClock, 1000);
-}
-
-// Função para desabilitar todos os botões de edição quando o SLA terminar
-function disableEditButtons() {
-    const editButtons = document.querySelectorAll('.edit-button');
-    editButtons.forEach(button => {
-        button.disabled = true;
-    });
+    updateClock();
+    clockInterval = setInterval(updateClock, 1000); // Initialize clockInterval here
 }
 
 // Inicialização com recuperação do localStorage
@@ -120,10 +139,29 @@ document.addEventListener('DOMContentLoaded', () => {
             startSLAClock(remainingSLA);
         } else {
             document.getElementById('slaClock').textContent = 'Tempo esgotado!';
-            disableEditButtons();
+             startSLAClock(remainingSLA);
         }
+    } else {
+        // Se não houver tempo armazenado, iniciar com 24 horas
+       // startSLAClock(24 * 60 * 60);
     }
 });
+
+// Atualização da issue
+async function updateIssue6Content(content) {
+    const response = await fetch(`https://api.github.com/repos/cledsonAlves/releases/issues/${ISSUE_NUMBER}`, {
+        method: 'PATCH',
+        headers: {
+            'Authorization': `Bearer ${TOKEN_GENERIC}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ body: content })
+    });
+
+    if (!response.ok) {
+        throw new Error('Falha ao atualizar o conteúdo da issue');
+    }
+}
 
 // Funções para carregar e criar a tabela
 async function loadIssuesAndCreateTable() {
@@ -133,20 +171,20 @@ async function loadIssuesAndCreateTable() {
 }
 
 async function fetchIssuesWithLabel() {
-    const response = await fetch(`https://api.github.com/repos/${OWNER}/${REPO}/issues?labels=${LABEL_PREFIX}&state=all`, {
-        headers: { 'Authorization': `Bearer ${TOKEN}` }
+    const response = await fetch(`https://api.github.com/repos/cledsonAlves/releases/issues?labels=${LABEL}&state=all`, {
+        headers: { 'Authorization': `Bearer ${TOKEN_GENERIC}` }
     });
     const issues = await response.json();
+    console.log(issues);
     return issues;
 }
-
 function createTableFromIssues(issues) {
     tableBody.innerHTML = '';
     issues.forEach(issue => {
         const tr = document.createElement('tr');
         const squadMatch = issue.body ? issue.body.match(/- Squad\s*:\s*(.+)/) : null;
-        const moduleMatch = issue.body ? issue.body.match(/- Nome do módulo\s*:\s*(.+)/) : null;
-        const detalheEntregaMatch = issue.body ? issue.body.match(/## Detalhe da entrega\s*([\s\S]*?)\n##/) : null;
+        const moduleMatch = issue.body ? issue.body.match(/- Nome do módulo\s*:\s*([^\\n]+)/) : null;
+        const detalheEntregaMatch = issue.body ? issue.body.match(/## Detalhe da entrega\s*[\r\n]+- (.+?)(?:\r\n##|\r\n\r\n|$)/) : null;
 
         const squad = squadMatch ? squadMatch[1].trim() : 'Não especificado';
         const modulo = moduleMatch ? moduleMatch[1].trim() : 'Não especificado';
@@ -168,6 +206,7 @@ function createTableFromIssues(issues) {
 
     updateStatusTotals();
 }
+
 
 function loadTableFromIssue6(content) {
     const lines = content.split('\n');
@@ -209,7 +248,7 @@ function loadPostmortemTableFromIssue6(content) {
     const tableStartIndex = lines.findIndex(line => line.includes('| Squad | Bug | Testado em Homologação |'));
 
     if (tableStartIndex === -1) {
-        console.log('Tabela de postmortem não encontrada na issue 6.');
+        console.log('Tabela de postmortem não encontrada na issue');
         return;
     }
 
@@ -281,21 +320,6 @@ async function toggleEditRow(button) {
     }
 }
 
-// Aplicar cores com base no status
-function applyStatusColor(row, status) {
-    row.classList.remove('row-in-progress', 'row-completed', 'row-blocked');
-    row.style.backgroundColor = ''; // Reset background color
-
-    if (status === 'Em andamento') {
-        row.style.backgroundColor = 'orange';
-    } else if (status === 'Finalizado') {
-        row.style.backgroundColor = 'green';
-    } else if (status === 'Bloqueado') {
-        row.style.backgroundColor = 'black';
-        row.style.color = 'white'; // Texto branco para contraste no fundo preto
-    }
-}
-
 async function saveRowToIssue6(row) {
     try {
         const issueContent = await getIssue6Content();
@@ -303,7 +327,7 @@ async function saveRowToIssue6(row) {
         await updateIssue6Content(updatedContent);
         console.log('Alterações de linha salvas com sucesso na issue 6.');
     } catch (error) {
-        console.error(`Erro ao salvar alterações de linha na issue 6: ${error.message}`);
+        console.error(`Erro ao salvar alterações de linha na issue${error.message}`);
     }
 }
 
@@ -354,6 +378,17 @@ function updateTableRowInContent(content, updatedRow) {
 }
 
 // Funções auxiliares
+function applyStatusColor(row, status) {
+    row.classList.remove('row-in-progress', 'row-completed', 'row-blocked');
+    if (status === 'Em andamento') {
+        row.classList.add('row-in-progress');
+    } else if (status === 'Finalizado') {
+        row.classList.add('row-completed');
+    } else if (status === 'Bloqueado') {
+        row.classList.add('row-blocked');
+    }
+}
+
 function updateStatusTotals() {
     let totalNaoIniciados = 0;
     let totalEmAndamento = 0;
@@ -382,3 +417,124 @@ function updateStatusTotals() {
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', main);
+
+// Implementação do chat para postmortem
+const chatBody = document.getElementById('chatBody');
+const chatInput = document.getElementById('chatInput');
+const sendButton = document.getElementById('sendButton');
+
+let postmortemState = {
+    inProgress: false,
+    squad: '',
+    bug: '',
+    testedInHomolog: ''
+};
+
+function addMessageToChat(message, isUser = false) {
+    const messageElement = document.createElement('div');
+    messageElement.classList.add(isUser ? 'user-message' : 'assistant-message');
+    messageElement.textContent = message;
+    chatBody.appendChild(messageElement);
+    chatBody.scrollTop = chatBody.scrollHeight;
+}
+
+function handleChatInput() {
+    const userMessage = chatInput.value.trim();
+    if (userMessage) {
+        addMessageToChat(userMessage, true);
+        chatInput.value = '';
+        processUserInput(userMessage);
+    }
+}
+
+sendButton.addEventListener('click', handleChatInput);
+chatInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        handleChatInput();
+    }
+});
+
+function processUserInput(input) {
+    if (!postmortemState.inProgress) {
+        if (input.toLowerCase().includes('postmortem')) {
+            postmortemState.inProgress = true;
+            addMessageToChat("Iniciando o processo de postmortem. Por favor, informe a squad:");
+        } else {
+            addMessageToChat("Olá! Como posso ajudar? Se quiser iniciar um postmortem, basta mencionar 'postmortem'.");
+        }
+    } else {
+        if (!postmortemState.squad) {
+            postmortemState.squad = input;
+            addMessageToChat("Obrigado. Agora, descreva o bug encontrado:");
+        } else if (!postmortemState.bug) {
+            postmortemState.bug = input;
+            addMessageToChat("Entendi. Este cenário foi testado em homologação? (Sim/Não)");
+        } else if (!postmortemState.testedInHomolog) {
+            postmortemState.testedInHomolog = input.toLowerCase() === 'sim' ? 'Sim' : 'Não';
+            addMessageToChat("Obrigado pelas informações. Vou cadastrar esse bug na release.");
+            cadastrarBugNaIssue6();
+        }
+    }
+}
+
+async function cadastrarBugNaIssue6() {
+    try {
+        const issueContent = await getIssue6Content();
+        const updatedContent = addPostmortemToIssue6(issueContent, postmortemState);
+        await updateIssue6Content(updatedContent);
+        console.log('Postmortem cadastrado com sucesso na issue 6.');
+        addMessageToChat("Bug cadastrado com sucesso. Deseja cadastrar outro bug?");
+        resetPostmortemState();
+    } catch (error) {
+        console.error(`Erro ao cadastrar postmortem na issue 6: ${error.message}`);
+        addMessageToChat("Ocorreu um erro ao cadastrar o bug. Por favor, tente novamente mais tarde.");
+    }
+}
+
+function addPostmortemToIssue6(content, postmortemData) {
+    const lines = content.split('\n');
+    const postmortemTableIndex = lines.findIndex(line => line.includes('| Squad | Bug | Testado em Homologação |'));
+
+    if (postmortemTableIndex === -1) {
+        content += '\n\n## Postmortem\n\n| Squad | Bug | Testado em Homologação |\n|-------|-----|--------------------------|';
+    }
+
+    content += `\n| ${postmortemData.squad} | ${postmortemData.bug} | ${postmortemData.testedInHomolog} |`;
+
+    return content;
+}
+
+function resetPostmortemState() {
+    postmortemState = {
+        inProgress: false,
+        squad: '',
+        bug: '',
+        testedInHomolog: ''
+    };
+}
+
+// Função para destacar linhas com atraso
+function highlightDelayedRows() {
+    const rows = tableBody.getElementsByTagName('tr');
+    const now = new Date();
+    const twoDaysAgo = new Date(now.getTime() - (2 * 24 * 60 * 60 * 1000));
+
+    for (let i = 0; i < rows.length; i++) {
+        const statusCell = rows[i].cells[1];
+        const dateCell = rows[i].cells[5]; // Assumindo que a data está na sexta coluna
+
+        if (statusCell.textContent !== 'Finalizado') {
+            const date = new Date(dateCell.textContent);
+            if (date < twoDaysAgo) {
+                rows[i].style.backgroundColor = '#ffcccc';
+            }
+        }
+    }
+}
+
+// Atualizar a tabela a cada 5 minutos
+setInterval(() => {
+   // loadIssuesAndCreateTable();
+   highlightDelayedRows();
+}, 1 * 60 * 1000);
+
