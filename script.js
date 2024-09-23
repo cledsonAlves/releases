@@ -1,4 +1,3 @@
-
 const TOKEN_GENERIC = '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';
 
 const OWNER = 'cledsonAlves';
@@ -13,65 +12,94 @@ let postmortemTableBody;
 // Função principal
 async function main() {
     try {
+        addDebugLog('Iniciando o processo principal');
         tableBody = document.querySelector('#squadTable tbody');
         postmortemTableBody = document.querySelector('#postmortemTable tbody');
         if (!tableBody || !postmortemTableBody) {
             throw new Error('Elementos tbody não encontrados');
         }
+        addDebugLog('Elementos tbody encontrados');
+
         const issue6Content = await getIssue6Content();
+        addDebugLog(`Conteúdo da issue 6 obtido: ${issue6Content.substring(0, 100)}...`);
+
         if (issue6Content.trim() === '') {
+            addDebugLog('Issue 6 está vazia. Carregando issues e criando tabela');
             await loadIssuesAndCreateTable();
         } else {
+            addDebugLog('Carregando tabela a partir do conteúdo da issue 6');
             loadTableFromIssue6(issue6Content);
         }
         loadPostmortemTableFromIssue6(issue6Content);
+        addDebugLog('Processo principal concluído com sucesso');
     } catch (error) {
         console.error(`Erro: ${error.message}`);
+        addDebugLog(`Erro encontrado: ${error.message}`);
     }
 }
+
+async function readSquadsCSV() {
+    try {
+        const response = await fetch('https://raw.githubusercontent.com/cledsonAlves/releases/main/squads.csv');
+        if (!response.ok) {
+            throw new Error('Erro ao buscar o CSV do GitHub');
+        }
+        const csvText = await response.text();
+
+        const lines = csvText.split('\n');
+        const squads = {};
+        lines.forEach(line => {
+            const [squad, modulos] = line.split(';');
+            if (squad && modulos) {
+                squads[squad.trim()] = modulos.replace(/"/g, '').split(',').map(m => m.trim()).filter(m => m !== '');
+            }
+        });
+        addDebugLog(`Squads lidas do CSV: ${JSON.stringify(squads)}`);
+        return squads;
+    } catch (error) {
+        console.error('Erro ao ler o arquivo CSV:', error);
+        addDebugLog(`Erro ao ler o arquivo CSV: ${error.message}`);
+        return {};
+    }
+}
+
 
 // Função para verificar se squads de um módulo precisam testar
 function verificarSquadsParaTestar(squads, modulo) {
-    // Verifica se alguma squad do módulo teve entrega
-    const moduloTemEntrega = squads.some(squad => squad.modulo === modulo && squad.entrega === true);
+    const squadsDessecModulo = Object.entries(squads).filter(([_, modulos]) => modulos.includes(modulo) || modulos.includes('todos'));
+    const moduloTemEntrega = squadsDessecModulo.some(([squad]) => {
+        const row = Array.from(tableBody.rows).find(row => row.cells[2].textContent.trim().includes(squad));
+        return row && row.cells[1].textContent.trim() !== 'Não Iniciado';
+    });
 
-    // Se o módulo teve entrega, todas as squads do módulo precisam testar
     if (moduloTemEntrega) {
-        squads.forEach(squad => {
-            if (squad.modulo === modulo) {
-                console.log(`${squad.nome} precisa testar porque houve entrega no módulo ${modulo}.`);
-            }
+        squadsDessecModulo.forEach(([squad]) => {
+            console.log(`${squad} precisa testar porque houve entrega no módulo ${modulo}.`);
         });
     }
-}
+    }
+
 
 // Função para carregar e criar a tabela
 async function loadIssuesAndCreateTable() {
     const issues = await fetchIssuesWithLabel();
+    addDebugLog(`Issues encontradas: ${issues.length}`);
+    const squads = await readSquadsCSV();
+    addDebugLog(`Squads lidas do CSV: ${Object.keys(squads).length}`);
 
     // Criar tabela a partir das issues
-    createTableFromIssues(issues);
+    createTableFromIssues(issues, squads);
 
     // Após a criação da tabela, verificar se squads de um mesmo módulo precisam testar
-    const squads = [
-        { nome: 'Squad : FORMALIZACAO REMOTA - ANDROID', modulo: 'FORMALIZACAO', entrega: true },
-        { nome: 'SQUAD CORRETORA ACOMPANHAMENTO DE RV', modulo: 'RV', entrega: false },
-        { nome: 'TRANSAÇÃO DE RENDA VARIÁVEL', modulo: 'RV', entrega: true },
-        { nome: 'SQUAD FOUNDATION', modulo: 'FOUNDATION', entrega: true },
-        { nome: 'SQUAD CONTEÚDO E HUMANIZAÇÃO', modulo: 'CONTENT_HUMANIZATION', entrega: true },
-        { nome: 'SQUAD CONTRAT E RESGATE DE FUNDOS CANAIS', modulo: 'FUNDOS', entrega: false },
-        // Adicione mais squads conforme necessário
-    ];
-
-    const modulos = [...new Set(squads.map(squad => squad.modulo))];
+    const modulos = [...new Set(Object.values(squads).flat())];
     modulos.forEach(modulo => verificarSquadsParaTestar(squads, modulo));
 
+    // Salvar a tabela completa na issue 6
     await saveFullTableToIssue6();
 }
 
-
 async function getIssue6Content() {
-    const response = await fetch(`https://api.github.com/repos/cledsonAlves/releases/issues/${ISSUE_NUMBER}`, {
+    const response = await fetch(`https://api.github.com/repos/${REPO_ISSUES}/issues/${ISSUE_NUMBER}`, {
         headers: { 'Authorization': `Bearer ${TOKEN_GENERIC}` }
     });
     const issueData = await response.json();
@@ -108,7 +136,7 @@ function calculateRemainingSLA(startTime) {
 function startSLAClock(duration) {
     let timer = duration;
     const clockElement = document.getElementById('slaClock');
-    let clockInterval; // Declare clockInterval here
+    let clockInterval;
 
     function updateClock() {
         const hours = Math.floor(timer / 3600);
@@ -124,7 +152,7 @@ function startSLAClock(duration) {
     }
 
     updateClock();
-    clockInterval = setInterval(updateClock, 1000); // Initialize clockInterval here
+    clockInterval = setInterval(updateClock, 1000);
 }
 
 // Inicialização com recuperação do localStorage
@@ -139,17 +167,18 @@ document.addEventListener('DOMContentLoaded', () => {
             startSLAClock(remainingSLA);
         } else {
             document.getElementById('slaClock').textContent = 'Tempo esgotado!';
-             startSLAClock(remainingSLA);
         }
-    } else {
-        // Se não houver tempo armazenado, iniciar com 24 horas
-       // startSLAClock(24 * 60 * 60);
     }
 });
 
 // Atualização da issue
 async function updateIssue6Content(content) {
-    const response = await fetch(`https://api.github.com/repos/cledsonAlves/releases/issues/${ISSUE_NUMBER}`, {
+    if (content.trim() === '') {
+        console.error('Conteúdo vazio. Não será atualizada a issue 6.');
+        return;
+    }
+
+    const response = await fetch(`https://api.github.com/repos/${REPO_ISSUES}/issues/${ISSUE_NUMBER}`, {
         method: 'PATCH',
         headers: {
             'Authorization': `Bearer ${TOKEN_GENERIC}`,
@@ -163,50 +192,90 @@ async function updateIssue6Content(content) {
     }
 }
 
-// Funções para carregar e criar a tabela
-async function loadIssuesAndCreateTable() {
-    const issues = await fetchIssuesWithLabel();
-    createTableFromIssues(issues);
-    await saveFullTableToIssue6();
+// Adicione logs para debug
+function addDebugLog(message) {
+    console.log(`DEBUG: ${message}`);
 }
 
+
 async function fetchIssuesWithLabel() {
-    const response = await fetch(`https://api.github.com/repos/cledsonAlves/releases/issues?labels=${LABEL}&state=all`, {
+    const response = await fetch(`https://api.github.com/repos/${REPO_ISSUES}/issues?labels=${LABEL}&state=all`, {
         headers: { 'Authorization': `Bearer ${TOKEN_GENERIC}` }
     });
     const issues = await response.json();
     console.log(issues);
     return issues;
 }
-function createTableFromIssues(issues) {
+
+function createTableFromIssues(issues, squads) {
     tableBody.innerHTML = '';
+    let rowsAdded = 0;
+
+    // Usar um conjunto para armazenar combinações únicas de módulo + squad
+    const linhasAdicionadas = new Set();
+
     issues.forEach(issue => {
-        const tr = document.createElement('tr');
+        const moduleMatch = issue.body ? issue.body.match(/- Nome do módulo\s*:\s*([^\n]+)/) : null;
         const squadMatch = issue.body ? issue.body.match(/- Squad\s*:\s*(.+)/) : null;
-        const moduleMatch = issue.body ? issue.body.match(/- Nome do módulo\s*:\s*([^\\n]+)/) : null;
-        const detalheEntregaMatch = issue.body ? issue.body.match(/## Detalhe da entrega\s*[\r\n]+- (.+?)(?:\r\n##|\r\n\r\n|$)/) : null;
 
-        const squad = squadMatch ? squadMatch[1].trim() : 'Não especificado';
         const modulo = moduleMatch ? moduleMatch[1].trim() : 'Não especificado';
-        const detalheEntrega = detalheEntregaMatch ? detalheEntregaMatch[1].trim() : 'Nada a declarar';
+        const issueSquad = squadMatch ? squadMatch[1].trim() : 'Não especificado';
 
-        tr.innerHTML = `
-            <td>${issue.number}</td>
-            <td>Não Iniciado</td>
-            <td>${squad}</td>
-            <td>${modulo}</td>
-            <td class="delivery-detail">${detalheEntrega}</td>
-            <td><button class="edit-button">Editar</button></td>
-        `;
+        addDebugLog(`Processando issue: ${issue.number}, Módulo: ${modulo}, Squad: ${issueSquad}`);
 
-        applyStatusColor(tr, 'Não Iniciado');
-        addEditButtonListener(tr);
-        tableBody.appendChild(tr);
+        // Verificar se o módulo aparece no CSV e pegar todas as squads associadas
+        const squadsAssociadas = Object.entries(squads).filter(([_, modulos]) => modulos.includes(modulo));
+
+        // Para cada squad encontrada no CSV com o mesmo módulo, adicionamos uma nova linha na tabela se ainda não foi adicionada
+        squadsAssociadas.forEach(([csvSquad]) => {
+            const chaveUnica = `${modulo}-${csvSquad}`;
+
+            // Verificar se a combinação já foi adicionada ao conjunto
+            if (!linhasAdicionadas.has(chaveUnica)) {
+                addDebugLog(`Adicionando linha para o módulo ${modulo} e squad ${csvSquad}`);
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${issue.number}</td>
+                    <td>Não Iniciado</td>
+                    <td>${csvSquad}</td>  <!-- Squad do CSV -->
+                    <td>${modulo}</td>
+                    <td class="delivery-detail">Nada a declarar</td>
+                    <td><button class="edit-button">Editar</button></td>
+                `;
+
+                applyStatusColor(tr, 'Não Iniciado');
+                addEditButtonListener(tr);
+                tableBody.appendChild(tr);
+                rowsAdded++;
+
+                // Adiciona a combinação única ao conjunto para evitar duplicações
+                linhasAdicionadas.add(chaveUnica);
+            } else {
+                addDebugLog(`Linha duplicada ignorada para a combinação ${chaveUnica}`);
+            }
+        });
     });
 
+    addDebugLog(`Linhas adicionadas à tabela: ${rowsAdded}`);
     updateStatusTotals();
 }
 
+
+
+function checkSquadInclusion(issueSquad, issueModule, squads) {
+    for (const [csvSquad, modules] of Object.entries(squads)) {
+        // Verifica se o nome da squad da issue contém o nome da squad do CSV
+        if (issueSquad.toUpperCase().includes(csvSquad.split('-')[1].trim().toUpperCase())) {
+            // Verifica se o módulo está na lista de módulos da squad ou se a squad tem 'todos'
+            if (modules.includes(issueModule) || modules.includes('todos')) {
+                addDebugLog(`Match encontrado: Issue Squad: ${issueSquad}, CSV Squad: ${csvSquad}, Módulo: ${issueModule}`);
+                return true;
+            }
+        }
+    }
+    return false;
+}
 
 function loadTableFromIssue6(content) {
     const lines = content.split('\n');
@@ -327,7 +396,7 @@ async function saveRowToIssue6(row) {
         await updateIssue6Content(updatedContent);
         console.log('Alterações de linha salvas com sucesso na issue 6.');
     } catch (error) {
-        console.error(`Erro ao salvar alterações de linha na issue${error.message}`);
+        console.error(`Erro ao salvar alterações de linha na issue: ${error.message}`);
     }
 }
 
@@ -335,6 +404,10 @@ async function saveRowToIssue6(row) {
 async function saveFullTableToIssue6() {
     try {
         const tableContent = generateFullTableContent();
+        if (tableContent.trim() === '') {
+            console.error('A tabela está vazia. Não será salva na issue 6.');
+            return;
+        }
         await updateIssue6Content(tableContent);
         console.log('Tabela salva com sucesso na issue 6.');
     } catch (error) {
@@ -347,12 +420,27 @@ function generateFullTableContent() {
     tableContent += "|------------------|--------|-------------------|--------------------|--------------------|";
 
     const rows = tableBody.querySelectorAll('tr');
+    addDebugLog(`Número de linhas na tabela: ${rows.length}`);
+
+    if (rows.length === 0) {
+        addDebugLog('Nenhuma linha encontrada na tabela.');
+        return '';
+    }
+
     rows.forEach(row => {
         const cells = row.cells;
-        tableContent += `\n| ${cells[0].innerText} | ${cells[1].innerText} | ${cells[2].innerText} | ${cells[3].innerText} | ${cells[4].innerText} |`;
+        if (cells.length >= 5) {
+            tableContent += `\n| ${cells[0].innerText} | ${cells[1].innerText} | ${cells[2].innerText} | ${cells[3].innerText} | ${cells[4].innerText} |`;
+        }
     });
 
+    addDebugLog(`Conteúdo da tabela gerado: ${tableContent}`);
     return tableContent;
+}
+
+// Função para adicionar logs de debug
+function addDebugLog(message) {
+    console.log(`DEBUG: ${message}`);
 }
 
 function updateTableRowInContent(content, updatedRow) {
@@ -534,7 +622,5 @@ function highlightDelayedRows() {
 
 // Atualizar a tabela a cada 5 minutos
 setInterval(() => {
-   // loadIssuesAndCreateTable();
-   highlightDelayedRows();
-}, 1 * 60 * 1000);
-
+    highlightDelayedRows();
+}, 5 * 60 * 1000);
