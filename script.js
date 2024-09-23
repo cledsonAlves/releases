@@ -148,12 +148,23 @@ function startSLAClock(duration) {
         if (--timer < 0) {
             clockElement.textContent = 'Tempo esgotado!';
             clearInterval(clockInterval);
+            disableEditButtons();  // Desativa os botões quando o tempo acabar
         }
     }
 
     updateClock();
     clockInterval = setInterval(updateClock, 1000);
 }
+
+function disableEditButtons() {
+    const editButtons = document.querySelectorAll('.edit-button');
+    editButtons.forEach(button => {
+        button.disabled = true;  // Desabilita o botão de edição
+        button.style.backgroundColor = '#ccc';  // Muda a cor para indicar que está desativado
+        button.style.cursor = 'not-allowed';  // Indica visualmente que não é clicável
+    });
+}
+
 
 // Inicialização com recuperação do localStorage
 document.addEventListener('DOMContentLoaded', () => {
@@ -167,9 +178,11 @@ document.addEventListener('DOMContentLoaded', () => {
             startSLAClock(remainingSLA);
         } else {
             document.getElementById('slaClock').textContent = 'Tempo esgotado!';
+            disableEditButtons();  // Se o tempo já estiver esgotado, desabilitar os botões imediatamente
         }
     }
 });
+
 
 // Atualização da issue
 async function updateIssue6Content(content) {
@@ -640,3 +653,12 @@ function highlightDelayedRows() {
 setInterval(() => {
     highlightDelayedRows();
 }, 5 * 60 * 1000);
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Gerar o QR Code
+    const qrcode = new QRCode(document.getElementById("qrcode"), {
+        text: "https://app-store-link.com",  // Substitua pelo link do app ou qualquer texto
+        width: 128,
+        height: 128
+    });
+});
