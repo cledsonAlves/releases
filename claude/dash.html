@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard de Releases</title>
+    <!-- Inclua o Highcharts -->
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <!-- Módulos adicionais do Highcharts, se necessário -->
+    <script src="https://code.highcharts.com/highcharts-more.js"></script>
+    <script src="https://code.highcharts.com/modules/solid-gauge.js"></script>
+    <!-- Estilos opcionais -->
+    <style>
+        .chart-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+            margin-bottom: 40px;
+        }
+        #timeline {
+            width: 100%;
+            height: 400px;
+            margin-bottom: 40px;
+        }
+    </style>
+</head>
+<body>
+<!-- Elementos para os gráficos -->
+<div id="releasesByMonthChart" class="chart-container"></div>
+<div id="releasesByMonthLineChart" class="chart-container"></div>
+<div id="stackedBarChart" class="chart-container"></div>
+<div id="timeToAlphaChart" class="chart-container"></div>
+<div id="timeToDistributionEndChart" class="chart-container"></div>
+<div id="statusChart" class="chart-container"></div>
+<div id="platformChart" class="chart-container"></div>
+<div id="successRateChart" class="chart-container"></div>
+<div id="canceledByPlatformChart" class="chart-container"></div>
+<div id="okrStoreChart" class="chart-container"></div>
+<div id="okrRolloutChart" class="chart-container"></div>
+<div id="timeline"></div>
+
+<!-- Seu script JavaScript -->
+<script>
+    // Função para buscar dados da API
+    async function fetchReleaseData() {
+        try {
+            const url = 'https://api.github.com/repos/cledsonAlves/releases/issues/9';
+            const response = await fetch(url);
+            const data = await response.json();
+            const markdownContent = data.body;
+            console.log(markdownContent);
+            return parseMarkdownData(markdownContent);
+        } catch (error) {
+            console.error('Erro ao buscar dados:', error);
+            return null;
+        }
+    }
+
+    // Função para analisar os dados Markdown
+    function parseMarkdownData(markdownContent) {
+        const lines = markdownContent.split('\n').filter(line => line.trim() !== '');
+        const headerIndex = lines.findIndex(line => line.startsWith('|Release|'));
+        if (headerIndex === -1) return [];
+
+        const headers = lines[headerIndex].split('|').filter(Boolean).map(header => header.trim());
+        const releases = lines.slice(headerIndex + 2).map(line => {
+            const values = line.split('|').filter(Boolean).map(value => value.trim());
+            if (values.length !== headers.length) return null;
+            return headers.reduce((obj, header, index) => {
+                obj[header] = values[index] || null;
+                return obj;
+            }, {});
+        }).filter(Boolean);
+
+        return releases;
+    }
+
+    // Função genérica para criar gráficos usando Highcharts
+    function createChart(containerId, options) {
+        Highcharts.chart(containerId, options);
+    }
+
+    // Função para calcular quantas releases ocorreram por mês
+    function countReleasesByMonth(releases) {
+        const releasesByMonth = {};
+        const today = new Date();
+
+        releases.forEach(release => {
+            const date = new Date(release['Início do regressivo']);
+            if (!isNaN(date.getTime()) && date <= today) {
+                const monthYear = date.toISOString().slice(0, 7); // Formato 'YYYY-MM'
+
+                if (!releasesByMonth[monthYear]) {
+                    releasesByMonth[monthYear] = 0;
+                }
+                releasesByMonth[monthYear]++;
+            }
+        });
+
+        return releasesByMonth;
+    }
+
+    // Função para calcular as durações das releases
+    function calculateReleaseDurations(releases) {
+        const durations = releases.map(release => {
+            const regressiveStart = new Date(release['Início do regressivo']);
+            const alphaSubmission = new Date(release['Envio Alpha']);
+            const distributionEnd = new Date(release['Fim da distribuição']);
+
+            const timeToAlpha = (alphaSubmission - regressiveStart) / (1000 * 60 * 60 * 24); // Em dias
+            const timeToDistributionEnd = (distributionEnd - regressiveStart) / (1000 * 60 * 60 * 24); // Em dias
+
+            return {
+                releaseName: release.Release,
+                plataforma: release.Plataforma,
+                timeToAlpha: isNaN(timeToAlpha) ? null : timeToAlpha,
+                timeToDistributionEnd: isNaN(timeToDistributionEnd) ? null : timeToDistributionEnd
+            };
+        });
+
+        return durations;
+    }
+
+    // Função para criar o gráfico de releases por mês (barras)
+    function createReleasesByMonthChart(releasesByMonth) {
+        const categories = Object.keys(releasesByMonth).sort();
+        const data = categories.map(month => releasesByMonth[month]);
+
+        createChart('releasesByMonthChart', {
+            chart: {
+                type: 'column'
+            },
+            title: {
+                text: 'Releases por Mês'
+            },
+            xAxis: {
+                categories: categories,
+                title: {
+                    text: 'Mês'
+                }
+            },
+            yAxis: {
+                min: 0,
+                title: {
+                    text: 'Número de Releases'
+                }
+            },
+            series: [{
+                name: 'Releases',
+                data: data,
+                color: '#36A2EB'
+            }]
+        });
+    }
+
+    // Função para criar o gráfico de releases por mês (linha)
+    function createReleasesByMonthLineChart(releasesByMonth) {
+        const categories = Object.keys(releasesByMonth).sort();
+        const data = categories.map(month => releasesByMonth[month]);
+
+        createChart('releasesByMonthLineChart', {
+            chart: {
+                type: 'line'
+            },
+            title: {
+                text: 'Releases por Mês'
+            },
+            xAxis: {
+                categories: categories,
+                title: {
+                    text: 'Mês'
+                }
+            },
+            yAxis: {
+                min: 0,
+                title: {
+                    text: 'Número de Releases'
+                }
+            },
+            series: [{
+                name: 'Releases',
+                data: data,
+                color: '#36A2EB'
+            }]
+        });
+    }
+
+    // Função para contar releases por mês e plataforma
+    function countReleasesByMonthAndPlatform(releases) {
+        const data = {};
+        const today = new Date();
+
+        releases.forEach(release => {
+            const date = new Date(release['Início do regressivo']);
+            if (!isNaN(date.getTime()) && date <= today) {
+                const monthYear = date.toISOString().slice(0, 7); // 'YYYY-MM'
+                const platform = release.Plataforma;
+
+                if (!data[monthYear]) {
+                    data[monthYear] = {};
+                }
+                if (!data[monthYear][platform]) {
+                    data[monthYear][platform] = 0;
+                }
+                data[monthYear][platform]++;
+            }
+        });
+
+        return data;
+    }
+
+    // Função para criar gráfico de barras empilhadas
+    function createStackedBarChart(data) {
+        const categories = Object.keys(data).sort();
+        const platforms = [...new Set(Object.values(data).flatMap(monthData => Object.keys(monthData)))];
+
+        const series = platforms.map(platform => {
+            return {
+                name: platform,
+                data: categories.map(month => data[month][platform] || 0),
+                color: platform === 'Android' ? '#4CAF50' : '#2196F3'
+            };
+        });
+
+        createChart('stackedBarChart', {
+            chart: {
+                type: 'column'
+            },
+            title: {
+                text: 'Releases por Mês e Plataforma'
+            },
+            xAxis: {
+                categories: categories,
+                title: {
+                    text: 'Mês'
+                }
+            },
+            yAxis: {
+                min: 0,
+                title: {
+                    text: 'Número de Releases'
+                },
+                stackLabels: {
+                    enabled: true
+                }
+            },
+            plotOptions: {
+                column: {
+                    stacking: 'normal'
+                }
+            },
+            series: series
+        });
+    }
+
+    // Função para criar o gráfico de tempo até Envio Alpha
+    function createTimeToAlphaChart(durations) {
+        const categories = durations.map(d => `${d.releaseName} (${d.plataforma})`);
+        const data = durations.map(d => d.timeToAlpha);
+
+        createChart('timeToAlphaChart', {
+            chart: {
+                type: 'column'
+            },
+            title: {
+                text: 'Tempo do Início do Regressivo até Envio Alpha'
+            },
+            xAxis: {
+                categories: categories,
+                title: {
+                    text: 'Releases'
+                }
+            },
+            yAxis: {
+                min: 0,
+                title: {
+                    text: 'Dias'
+                }
+            },
+            series: [{
+                name: 'Dias até Envio Alpha',
+                data: data,
+                colorByPoint: true,
+                colors: data.map(value => value <= 5 ? '#4CAF50' : '#F44336')
+            }]
+        });
+    }
+
+    // Função para criar o gráfico de tempo até Fim da Distribuição
+    function createTimeToDistributionEndChart(durations) {
+        const categories = durations.map(d => `${d.releaseName} (${d.plataforma})`);
+        const data = durations.map(d => d.timeToDistributionEnd);
+
+        createChart('timeToDistributionEndChart', {
+            chart: {
+                type: 'column'
+            },
+            title: {
+                text: 'Tempo do Início do Regressivo até Fim da Distribuição'
+            },
+            xAxis: {
+                categories: categories,
+                title: {
+                    text: 'Releases'
+                }
+            },
+            yAxis: {
+                min: 0,
+                title: {
+                    text: 'Dias'
+                }
+            },
+            series: [{
+                name: 'Dias até Fim da Distribuição',
+                data: data,
+                colorByPoint: true,
+                colors: data.map(value => value <= 12 ? '#4CAF50' : '#F44336')
+            }]
+        });
+    }
+
+    // Funções auxiliares para processamento de dados
+    function countReleaseStatus(releases) {
+        const status = { Concluída: 0, Cancelada: 0, 'Em andamento': 0 };
+        releases.forEach(release => {
+            if (release.Status === 'Concluída') status.Concluída++;
+            else if (release.Status === 'Cancelada') status.Cancelada++;
+            else status['Em andamento']++;
+        });
+        return status;
+    }
+
+    function countPlatforms(releases) {
+        return releases.reduce((count, release) => {
+            count[release.Plataforma] = (count[release.Plataforma] || 0) + 1;
+            return count;
+        }, {});
+    }
+
+    function countCanceledByPlatform(releases) {
+        return releases.reduce((count, release) => {
+            if (release.Status === 'Cancelada') {
+                count[release.Plataforma] = (count[release.Plataforma] || 0) + 1;
+            }
+            return count;
+        }, {});
+    }
+
+    function calculateOKRProgress(releases) {
+        const storeSubmissionTimes = [];
+        const fullRolloutTimes = [];
+
+        releases.forEach(release => {
+            const regressiveStart = new Date(release['Início do regressivo']);
+            const alphaSubmission = new Date(release['Envio Alpha']);
+            const distributionEnd = new Date(release['Fim da distribuição']);
+
+            if (!isNaN(regressiveStart) && !isNaN(alphaSubmission)) {
+                storeSubmissionTimes.push((alphaSubmission - regressiveStart) / (1000 * 60 * 60 * 24));
+            }
+
+            if (!isNaN(regressiveStart) && !isNaN(distributionEnd)) {
+                fullRolloutTimes.push((distributionEnd - regressiveStart) / (1000 * 60 * 60 * 24));
+            }
+        });
+
+        return {
+            storeSubmission: storeSubmissionTimes.reduce((a, b) => a + b, 0) / storeSubmissionTimes.length,
+            fullRollout: fullRolloutTimes.reduce((a, b) => a + b, 0) / fullRolloutTimes.length
+        };
+    }
+
+    // Funções para criar os gráficos restantes
+    function createStatusChart(data) {
+        createChart('statusChart', {
+            chart: {
+                type: 'pie'
+            },
+            title: {
+                text: 'Status das Releases'
+            },
+            series: [{
+                name: 'Releases',
+                colorByPoint: true,
+                data: Object.keys(data).map(key => ({
+                    name: key,
+                    y: data[key]
+                }))
+            }]
+        });
+    }
+
+    function createPlatformChart(data) {
+        createChart('platformChart', {
+            chart: {
+                type: 'column'
+            },
+            title: {
+                text: 'Releases por Plataforma'
+            },
+            xAxis: {
+                categories: Object.keys(data),
+                title: {
+                    text: 'Plataforma'
+                }
+            },
+            yAxis: {
+                min: 0,
+                title: {
+                    text: 'Número de Releases'
+                }
+            },
+            series: [{
+                name: 'Releases',
+                data: Object.values(data),
+                colorByPoint: true,
+                colors: ['#4CAF50', '#2196F3']
+            }]
+        });
+    }
+
+    function createSuccessRateChart(data) {
+        const total = Object.values(data).reduce((a, b) => a + b, 0);
+        const successRate = data.Concluída / total;
+
+        createChart('successRateChart', {
+            chart: {
+                type: 'pie'
+            },
+            title: {
+                text: 'Taxa de Sucesso'
+            },
+            series: [{
+                name: 'Releases',
+                colorByPoint: true,
+                data: [
+                    { name: 'Sucesso', y: successRate, color: '#4CAF50' },
+                    { name: 'Falha', y: 1 - successRate, color: '#F44336' }
+                ]
+            }]
+        });
+    }
+
+    function createCanceledByPlatformChart(data) {
+        createChart('canceledByPlatformChart', {
+            chart: {
+                type: 'pie'
+            },
+            title: {
+                text: 'Releases Canceladas por Plataforma'
+            },
+            series: [{
+                name: 'Canceladas',
+                colorByPoint: true,
+                data: Object.keys(data).map(key => ({
+                    name: key,
+                    y: data[key]
+                }))
+            }]
+        });
+    }
+
+    function createOKRCharts(data) {
+        createGaugeChart('okrStoreChart', data.storeSubmission, 5, 'Meta: 5 dias');
+        createGaugeChart('okrRolloutChart', data.fullRollout, 12, 'Meta: 12 dias');
+    }
+
+    function createGaugeChart(containerId, value, target, titleText) {
+        createChart(containerId, {
+            chart: {
+                type: 'solidgauge'
+            },
+            title: {
+                text: titleText
+            },
+            pane: {
+                center: ['50%', '85%'],
+                size: '140%',
+                startAngle: -90,
+                endAngle: 90,
+                background: {
+                    backgroundColor: '#e0e0e0',
+                    innerRadius: '60%',
+                    outerRadius: '100%',
+                    shape: 'arc'
+                }
+            },
+            tooltip: {
+                enabled: false
+            },
+            yAxis: {
+                min: 0,
+                max: target * 2,
+                stops: [
+                    [value / (target * 2), value <= target ? '#4CAF50' : '#F44336']
+                ],
+                lineWidth: 0,
+                tickWidth: 0,
+                minorTickInterval: null,
+                labels: {
+                    enabled: false
+                }
+            },
+            series: [{
+                name: 'Dias',
+                data: [value],
+                dataLabels: {
+                    format: '<div style="text-align:center"><span style="font-size:25px">{y}</span><br/><span style="font-size:12px;opacity:0.4">dias</span></div>'
+                }
+            }]
+        });
+    }
+
+    function createTimeline(releases) {
+        const categories = releases.map(release => `${release.Release} (${release.Plataforma})`);
+        const data = releases.map(release => {
+            const start = new Date(release['Início do regressivo']).getTime();
+            const end = new Date(release['Fim da distribuição']).getTime();
+            return {
+                x: start,
+                x2: end,
+                y: categories.indexOf(`${release.Release} (${release.Plataforma})`)
+            };
+        });
+
+        createChart('timeline', {
+            chart: {
+                type: 'xrange'
+            },
+            title: {
+                text: 'Linha do Tempo de Releases'
+            },
+            xAxis: {
+                type: 'datetime'
+            },
+            yAxis: {
+                categories: categories,
+                reversed: true
+            },
+            series: [{
+                name: 'Releases',
+                borderColor: 'gray',
+                pointWidth: 20,
+                data: data,
+                dataLabels: {
+                    enabled: true,
+                    format: '{point.releaseName}'
+                }
+            }]
+        });
+    }
+
+    // Função para processar os dados e criar os gráficos
+    function processData(releases) {
+        // Funções auxiliares
+        const statusData = countReleaseStatus(releases);
+        const platformData = countPlatforms(releases);
+        const canceledByPlatformData = countCanceledByPlatform(releases);
+        const okrProgress = calculateOKRProgress(releases);
+
+        // Novas contagens
+        const releasesByMonth = countReleasesByMonth(releases);
+        const releasesByMonthAndPlatform = countReleasesByMonthAndPlatform(releases);
+
+        // Cálculo dos tempos para as metas
+        const releaseDurations = calculateReleaseDurations(releases);
+
+        // Criação de gráficos
+        createStatusChart(statusData);
+        createPlatformChart(platformData);
+        createSuccessRateChart(statusData);
+        createCanceledByPlatformChart(canceledByPlatformData);
+        createOKRCharts(okrProgress);
+        createTimeline(releases);
+
+        createReleasesByMonthChart(releasesByMonth);
+        createReleasesByMonthLineChart(releasesByMonth);
+        createStackedBarChart(releasesByMonthAndPlatform);
+
+        createTimeToAlphaChart(releaseDurations);
+        createTimeToDistributionEndChart(releaseDurations);
+    }
+
+    // Função principal para inicializar o dashboard
+    async function initDashboard() {
+        const releaseData = await fetchReleaseData();
+        if (releaseData) {
+            processData(releaseData);
+        } else {
+            console.error('Não foi possível carregar os dados das releases.');
+        }
+    }
+
+    // Inicializa o dashboard quando a página carrega
+    window.addEventListener('load', initDashboard);
+    </script>
+</body>
+</html>

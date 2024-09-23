@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel de Releases</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1>Painel de Releases (Até a Data Atual)</h1>
+    </header>
+    <main>
+        <div class="container">
+            <div class="chart-box">
+                <h2>Releases até alpha</h2>
+                <canvas id="timeToAlphaChart"></canvas>
+            </div>
+
+            <div class="chart-box">
+                <h2>Releases até distribuição</h2>
+                <canvas id="timeToDistributionEndChart"></canvas>
+            </div>
+
+            <div class="chart-box">
+                <h2>Releases Canceladas vs. Concluídas vs. Em Andamento</h2>
+                <canvas id="statusChart"></canvas>
+            </div>
+            <div class="chart-box">
+                <h2>Quantidade por Plataforma (Android/iOS)</h2>
+                <canvas id="platformChart"></canvas>
+            </div>
+            <div class="chart-box">
+                <h2>Tempo de Release (Dias)</h2>
+                <canvas id="timeChart"></canvas>
+            </div>
+            <div class="chart-box">
+                <h2>Taxa de Sucesso</h2>
+                <canvas id="successRateChart"></canvas>
+            </div>
+            <div class="chart-box">
+                <h2>Tempo entre Início Regressivo e Envio Alpha (Dias)</h2>
+                <canvas id="alphaTimeChart"></canvas>
+            </div>
+            <div class="chart-box">
+                <h2>Tempo entre Início Regressivo e Fim da Distribuição (Dias)</h2>
+                <canvas id="distributionTimeChart"></canvas>
+            </div>
+            <div class="chart-box full-width">
+                <h2>Linha do Tempo de Releases</h2>
+                <div id="timeline"></div>
+            </div>
+            <div class="chart-box">
+                <h2>Releases Canceladas por Plataforma</h2>
+                <canvas id="canceledByPlatformChart"></canvas>
+            </div>
+            <div class="chart-box">
+                <h2>Progresso para OKR (5 dias até envio para loja)</h2>
+                <canvas id="okrStoreChart"></canvas>
+            </div>
+            <div class="chart-box">
+                <h2>Progresso para OKR (15 dias até 100% do rollout)</h2>
+                <canvas id="okrRolloutChart"></canvas>
+            </div>
+            <div class="chart-box">
+                <h2>Releases por Mês</h2>
+                <canvas id="releasesByMonthChart"></canvas>
+            </div>
+
+
+
+            <div class="chart-box">
+                <h2>Releases por Mês</h2>
+                <canvas id="releasesByMonthLineChart"></canvas>
+            </div>
+
+            <div class="chart-box">
+                <h2>Releases por Mês</h2>
+                <canvas id="stackedBarChart"></canvas>
+            </div>
+
+
+            <!-- Gráfico: Tempo até Envio Alpha -->
+
+
+            <!-- Gráfico: Tempo até Fim da Distribuição -->
+
+
+
+
+        </div>
+    </main>
+    <script src="script.js"></script>
+</body>
+</html>

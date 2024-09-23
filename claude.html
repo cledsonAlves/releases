@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Releases</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 50px;
+        }
+        .chart-container {
+            margin-bottom: 50px;
+            width: 100%;
+        }
+        .table-container {
+            margin-top: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .dashboard-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+        }
+        .card {
+            margin: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            background-color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .card h3 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Dashboard de Releases</h1>
+
+<div class="dashboard-container">
+    <!-- Gráfico de Status -->
+    <div class="card" style="flex: 1 1 45%;">
+        <h3>Releases Canceladas vs Concluídas</h3>
+        <div id="statusChart" class="chart-container" style="height: 400px;"></div>
+        <div class="table-container">
+            <h5>Tabela de Releases Canceladas vs Concluídas</h5>
+            <table id="statusTable">
+                <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Número de Releases</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Gráfico de Releases por Mês -->
+    <div class="card" style="flex: 1 1 45%;">
+        <h3>Releases por Mês</h3>
+        <div id="monthlyChart" class="chart-container" style="height: 400px;"></div>
+        <div class="table-container">
+            <h5>Tabela de Releases por Mês</h5>
+            <table id="monthlyTable">
+                <thead>
+                <tr>
+                    <th>Mês</th>
+                    <th>Número de Releases</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="dashboard-container">
+    <!-- Gráfico de Rollout -->
+    <div class="card" style="flex: 1 1 90%;">
+        <h3>Distribuição de Rollout</h3>
+        <div id="rolloutChart" class="chart-container" style="height: 400px;"></div>
+        <div class="table-container">
+            <h5>Tabela de Distribuição de Rollout</h5>
+            <table id="rolloutTable">
+                <thead>
+                <tr>
+                    <th>Release</th>
+                    <th>Rollout (%)</th>
+                </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+// Função para buscar a issue via API do GitHub
+async function fetchIssueData() {
+    const url = 'https://api.github.com/repos/cledsonAlves/releases/issues/9';
+    const response = await fetch(url, {
+        headers: { 'Accept': 'application/vnd.github.v3+json' }
+    });
+    const data = await response.json();
+    return data.body;  // Retorna o conteúdo do corpo da issue
+}
+
+// Função para processar o corpo da issue e extrair dados
+function processIssueData(body) {
+    const lines = body.split('\n');
+    const releases = [];
+
+    lines.forEach(line => {
+        if (line.startsWith('| R')) {
+            const columns = line.split('|').map(col => col.trim());
+            releases.push({
+                release: columns[1],
+                plataforma: columns[2],
+                status: columns[3],
+                rollout: parseFloat(columns[4].replace('%', '')) || 0,
+                versao: columns[5],
+                dataCorte: columns[6],
+                inicioRegressivo: columns[9],
+                fimRegressivo: columns[10]
+            });
+        }
+    });
+
+    return releases;
+}
+
+// Função para gerar gráficos e preencher tabelas
+function generateChartsAndTables(releases) {
+    // Gráfico de Releases Canceladas vs Concluídas
+    const statusCounts = { Cancelada: 0, Concluída: 0 };
+    releases.forEach(release => {
+        if (release.status === 'Cancelada') statusCounts.Cancelada++;
+        if (release.status === 'Concluída') statusCounts.Concluída++;
+    });
+
+    Highcharts.chart('statusChart', {
+        chart: {
+            type: 'column'
+        },
+        title: {
+            text: 'Releases Canceladas vs Concluídas'
+        },
+        xAxis: {
+            categories: ['Cancelada', 'Concluída']
+        },
+        yAxis: {
+            title: {
+                text: 'Número de Releases'
+            }
+        },
+        series: [{
+            name: 'Releases',
+            data: [statusCounts.Cancelada, statusCounts.Concluída],
+            colorByPoint: true
+        }]
+    });
+
+    // Preencher tabela de Status
+    const statusTableBody = document.getElementById('statusTable').querySelector('tbody');
+    statusTableBody.innerHTML = `
+        <tr><td>Cancelada</td><td>${statusCounts.Cancelada}</td></tr>
+        <tr><td>Concluída</td><td>${statusCounts.Concluída}</td></tr>
+    `;
+
+    // Gráfico de Releases por Mês
+    const monthlyCounts = Array(12).fill(0);
+    releases.forEach(release => {
+        const month = new Date(release.dataCorte).getMonth();
+        monthlyCounts[month]++;
+    });
+
+    Highcharts.chart('monthlyChart', {
+        chart: {
+            type: 'column'
+        },
+        title: {
+            text: 'Releases por Mês'
+        },
+        xAxis: {
+            categories: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+        },
+        yAxis: {
+            title: {
+                text: 'Número de Releases'
+            }
+        },
+        series: [{
+            name: 'Releases por Mês',
+            data: monthlyCounts,
+            colorByPoint: true
+        }]
+    });
+
+    // Preencher tabela de Releases por Mês
+    const monthlyTableBody = document.getElementById('monthlyTable').querySelector('tbody');
+    monthlyCounts.forEach((count, index) => {
+        const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+        monthlyTableBody.innerHTML += `<tr><td>${monthNames[index]}</td><td>${count}</td></tr>`;
+    });
+
+    // Gráfico de Rollout
+    const rolloutData = releases.map(release => release.rollout);
+    const labels = releases.map(release => release.release);
+
+    Highcharts.chart('rolloutChart', {
+        chart: {
+            type: 'column'
+        },
+        title: {
+            text: 'Distribuição de Rollout'
+        },
+        xAxis: {
+            categories: labels,
+            title: {
+                text: 'Releases'
+            }
+        },
+        yAxis: {
+            title: {
+                text: 'Rollout (%)'
+            },
+            max: 100
+        },
+        series: [{
+            name: 'Rollout',
+            data: rolloutData,
+            colorByPoint: true
+        }]
+    });
+    const rolloutTableBody = document.getElementById('rolloutTable').querySelector('tbody');
+    labels.forEach((label, index) => {
+        rolloutTableBody.innerHTML += `<tr><td>${label}</td><td>${rolloutData[index]}%</td></tr>`;
+    });
+}
+
+// Função principal
+async function init() {
+    const body = await fetchIssueData();
+    const releases = processIssueData(body);
+    generateChartsAndTables(releases);
+}
+
+// Iniciar ao carregar a página
+window.onload = init;
+</script>
