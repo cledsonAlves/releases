@@ -90,15 +90,35 @@
 <script>
         // Função para buscar dados da issue do GitHub
         async function fetchGitHubIssue() {
-            const url = 'https://api.github.com/repos/cledsonAlves/releases/issues/9';
-            const response = await fetch(url);
-            const data = await response.json();
+     try {
+        const url = 'https://api.github.com/repos/cledsonAlves/releases/issues/9';
+        const token = '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'; // Substitua pelo seu token real
 
-            // Exemplo: aqui você processa o conteúdo da issue (data.body) e extrai os dados relevantes
-            const issueBody = data.body;
-            const releasesData = parseMarkdown(issueBody);
-            updateCharts(releasesData);
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `token ${token}`,
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
+
+        const data = await response.json();
+          const issueBody = data.body;
+            const releasesData = parseMarkdown(issueBody);
+        console.log(releasesData);
+        return parseMarkdownData(releasesData);
+    } catch (error) {
+        console.error('Erro ao buscar dados:', error);
+        return null;
+    }
+
+
+        }
+
+
 
         // Função para converter o conteúdo Markdown da issue em dados utilizáveis
         function parseMarkdown(markdown) {

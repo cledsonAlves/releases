@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TensorFlow.js QA</title>
+</head>
+<body>
+<h1>TensorFlow.js Question Answering</h1>
+<div>
+    <label for="context">Contexto:</label><br>
+    <textarea id="context" rows="5" cols="50">
+      O íon é um aplicativo mobile de investimentos.
+    </textarea>
+</div>
+<div>
+    <label for="question">Pergunta:</label><br>
+    <input type="text" id="question" value="Quem é o íon?">
+</div>
+<button onclick="loadModelAndAskQuestion()">Fazer Pergunta</button>
+
+<h2>Resposta:</h2>
+<p id="answer">Nenhuma resposta ainda...</p>
+
+<script>
+    async function loadModelAndAskQuestion() {
+      const model = await tf.loadGraphModel('URL_DO_MODELO_AQUI/model.json');
+
+      const context = document.getElementById("context").value;
+      const question = document.getElementById("question").value;
+
+      // Fazer pré-processamento dos dados e enviar ao modelo
+      const inputTensor = tf.tensor([context, question]); // Exemplo simples
+
+      // Fazer inferência
+      const prediction = model.predict(inputTensor);
+
+      // Exibir a resposta
+      document.getElementById("answer").textContent = prediction;
+    }
+  </script>
+</body>
+</html>

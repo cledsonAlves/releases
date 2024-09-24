@@ -1,9 +1,21 @@
-// Função para buscar dados da API
-async function fetchReleaseData() {
+// Função para buscar dados da API do GitHub com autenticação via token
+async function fetchGitHubIssue() {
     try {
         const url = 'https://api.github.com/repos/cledsonAlves/releases/issues/9';
-        const response = await fetch(url);
-        const data = await response.json();
+        const token = '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'; // Substitua pelo seu token real
+
+        const response = await fetch(url, {
+            headers: {
+                'Authorization': `token ${token}`,
+                'Accept': 'application/vnd.github.v3+json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await responsddde.json();
         const markdownContent = data.body;
         console.log(markdownContent);
         return parseMarkdownData(markdownContent);

@@ -2,44 +2,204 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard de Releases</title>
     <!-- Inclua o Highcharts -->
-    <script src="https://code.highcharts.com/highcharts.js"></script>
-    <!-- Módulos adicionais do Highcharts, se necessário -->
-    <script src="https://code.highcharts.com/highcharts-more.js"></script>
-    <script src="https://code.highcharts.com/modules/solid-gauge.js"></script>
-    <!-- Estilos opcionais -->
+    <script src="https://code.highcharts.com/highcharts.js" defer></script>
+    <script src="https://code.highcharts.com/modules/exporting.js" defer></script>
+    <script src="https://code.highcharts.com/modules/accessibility.js" defer></script>
+    <script src="https://code.highcharts.com/modules/export-data.js" defer></script>
+    <script src="https://code.highcharts.com/highcharts-more.js" defer></script>
+    <script src="https://code.highcharts.com/modules/solid-gauge.js" defer></script>
+    <script src="https://code.highcharts.com/modules/xrange.js" defer></script>
+    <script src="https://code.highcharts.com/modules/heatmap.js" defer></script>
+    <script src="https://code.highcharts.com/modules/calendar.js" defer></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            background-color: #2c3e50;
+            padding: 20px;
+            color: #ecf0f1;
+            text-align: center;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 32px;
+            font-weight: 500;
+        }
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 30px auto;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
         .chart-container {
-            width: 100%;
-            max-width: 800px;
-            margin: 0 auto;
-            margin-bottom: 40px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            padding: 20px;
+            flex: 1 1 calc(50% - 20px);
+            box-sizing: border-box;
+            position: relative;
+        }
+        .full-width {
+            flex: 1 1 100%;
+        }
+        @media screen and (max-width: 768px) {
+            .chart-container {
+                flex: 1 1 100%;
+            }
+        }
+        .chart-container h2 {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #34495e;
+            font-weight: 500;
+        }
+        .chart-container p.description {
+            font-size: 14px;
+            color: #7f8c8d;
+            margin-bottom: 15px;
+        }
+        .download-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: #2980b9;
+            color: #fff;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
         }
         #timeline {
             width: 100%;
-            height: 400px;
-            margin-bottom: 40px;
+            height: 500px;
+        }
+        footer {
+            background-color: #2c3e50;
+            padding: 10px;
+            color: #ecf0f1;
+            text-align: center;
+        }
+        footer p {
+            margin: 0;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
-<!-- Elementos para os gráficos -->
-<div id="releasesByMonthChart" class="chart-container"></div>
-<div id="releasesByMonthLineChart" class="chart-container"></div>
-<div id="stackedBarChart" class="chart-container"></div>
-<div id="timeToAlphaChart" class="chart-container"></div>
-<div id="timeToDistributionEndChart" class="chart-container"></div>
-<div id="statusChart" class="chart-container"></div>
-<div id="platformChart" class="chart-container"></div>
-<div id="successRateChart" class="chart-container"></div>
-<div id="canceledByPlatformChart" class="chart-container"></div>
-<div id="okrStoreChart" class="chart-container"></div>
-<div id="okrRolloutChart" class="chart-container"></div>
-<div id="timeline"></div>
+<header>
+    <h1>Dashboard de Releases</h1>
+</header>
 
-<!-- Seu script JavaScript -->
-<script>
+<div class="container">
+    <!-- Gráficos em linha -->
+    <div class="chart-container">
+        <h2>Releases por Mês (Barras)</h2>
+        <p class="description">Este gráfico mostra a quantidade de releases realizadas em cada mês, permitindo visualizar a frequência das releases ao longo do tempo.</p>
+        <div id="releasesByMonthChart"></div>
+    </div>
+    <div class="chart-container">
+        <h2>Releases por Mês (Linha)</h2>
+        <p class="description">Este gráfico de linha apresenta a tendência das releases ao longo dos meses, destacando aumentos ou reduções na quantidade.</p>
+        <div id="releasesByMonthLineChart"></div>
+    </div>
+
+    <!-- Gráfico de spline com plot bands -->
+    <div class="chart-container full-width">
+        <h2>Tendência das Releases com Destaques</h2>
+        <p class="description">Este gráfico spline mostra a tendência das releases ao longo do tempo, com bandas que destacam períodos específicos.</p>
+        <div id="splinePlotBandsChart"></div>
+    </div>
+
+    <!-- Gráfico de barras empilhadas -->
+    <div class="chart-container full-width">
+        <h2>Releases por Mês e Plataforma</h2>
+        <p class="description">Este gráfico empilhado demonstra a distribuição das releases entre diferentes plataformas (Android e iOS) em cada mês.</p>
+        <div id="stackedBarChart"></div>
+    </div>
+
+    <!-- Gráfico de Calendário -->
+    <div class="chart-container full-width">
+        <h2>Calendário de Releases</h2>
+        <p class="description">Este gráfico de calendário mostra a distribuição das releases ao longo dos dias, permitindo identificar padrões ou picos em datas específicas.</p>
+        <div id="calendarChart"></div>
+    </div>
+
+    <!-- Gráficos de tempo até metas -->
+    <div class="chart-container">
+        <h2>Tempo até Envio Alpha</h2>
+        <p class="description">Mostra o tempo em dias desde o início do regressivo até o envio da versão Alpha para testes, por release.</p>
+        <div id="timeToAlphaChart"></div>
+    </div>
+    <div class="chart-container">
+        <h2>Tempo até Fim da Distribuição</h2>
+        <p class="description">Indica o tempo total em dias desde o início do regressivo até o fim da distribuição da release para todos os usuários.</p>
+        <div id="timeToDistributionEndChart"></div>
+    </div>
+
+    <!-- Outros gráficos -->
+    <div class="chart-container">
+        <h2>Status das Releases</h2>
+        <p class="description">Este gráfico de pizza ilustra a proporção de releases concluídas, canceladas e em andamento.</p>
+        <div id="statusChart"></div>
+    </div>
+    <div class="chart-container">
+        <h2>Releases por Plataforma</h2>
+        <p class="description">Apresenta a quantidade total de releases realizadas em cada plataforma (Android e iOS).</p>
+        <div id="platformChart"></div>
+    </div>
+    <div class="chart-container">
+        <h2>Taxa de Sucesso</h2>
+        <p class="description">Mostra a taxa de sucesso das releases, comparando o número de releases concluídas com o total.</p>
+        <div id="successRateChart"></div>
+    </div>
+    <div class="chart-container">
+        <h2>Cancelamentos por Plataforma</h2>
+        <p class="description">Exibe a quantidade de releases canceladas em cada plataforma.</p>
+        <div id="canceledByPlatformChart"></div>
+    </div>
+
+    <!-- Gráficos de Gauge -->
+    <div class="chart-container">
+        <h2>Progresso OKR: Envio para Loja</h2>
+        <p class="description">Mede o desempenho médio em dias para enviar as releases às lojas, comparado à meta estabelecida.</p>
+        <div id="okrStoreChart"></div>
+    </div>
+    <div class="chart-container">
+        <h2>Progresso OKR: Distribuição Completa</h2>
+        <p class="description">Avalia o tempo médio em dias para concluir a distribuição completa das releases, em relação à meta definida.</p>
+        <div id="okrRolloutChart"></div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="chart-container full-width">
+        <h2>Linha do Tempo de Releases</h2>
+        <p class="description">Visualiza o período de cada release desde o início do regressivo até o fim da distribuição, ao longo de uma linha do tempo, com destaque para períodos específicos.</p>
+        <div id="timeline"></div>
+    </div>
+
+
+</div>
+
+
+
+<footer>
+    <p>© 2024 Dashboard de Releases</p>
+</footer>
+
+<!-- Script JavaScript -->
+<script defer>
     // Função para buscar dados da API
     async function fetchReleaseData() {
         try {
@@ -62,7 +222,7 @@
         if (headerIndex === -1) return [];
 
         const headers = lines[headerIndex].split('|').filter(Boolean).map(header => header.trim());
-        const releases = lines.slice(headerIndex + 2).map(line => {
+        return lines.slice(headerIndex + 2).map(line => {
             const values = line.split('|').filter(Boolean).map(value => value.trim());
             if (values.length !== headers.length) return null;
             return headers.reduce((obj, header, index) => {
@@ -70,8 +230,6 @@
                 return obj;
             }, {});
         }).filter(Boolean);
-
-        return releases;
     }
 
     // Função genérica para criar gráficos usando Highcharts
@@ -79,35 +237,36 @@
         Highcharts.chart(containerId, options);
     }
 
-    // Função para calcular quantas releases ocorreram por mês
+    // Função para calcular quantas releases ocorreram por mês (até a data atual)
     function countReleasesByMonth(releases) {
         const releasesByMonth = {};
         const today = new Date();
 
         releases.forEach(release => {
             const date = new Date(release['Início do regressivo']);
-            if (!isNaN(date.getTime()) && date <= today) {
+            if (!isNaN(date) && date <= today) {
                 const monthYear = date.toISOString().slice(0, 7); // Formato 'YYYY-MM'
-
-                if (!releasesByMonth[monthYear]) {
-                    releasesByMonth[monthYear] = 0;
-                }
-                releasesByMonth[monthYear]++;
+                releasesByMonth[monthYear] = (releasesByMonth[monthYear] || 0) + 1;
             }
         });
 
         return releasesByMonth;
     }
 
-    // Função para calcular as durações das releases
+    // Função para calcular as durações das releases (até a data atual)
     function calculateReleaseDurations(releases) {
-        const durations = releases.map(release => {
+        const today = new Date();
+        return releases.map(release => {
             const regressiveStart = new Date(release['Início do regressivo']);
             const alphaSubmission = new Date(release['Envio Alpha']);
             const distributionEnd = new Date(release['Fim da distribuição']);
 
-            const timeToAlpha = (alphaSubmission - regressiveStart) / (1000 * 60 * 60 * 24); // Em dias
-            const timeToDistributionEnd = (distributionEnd - regressiveStart) / (1000 * 60 * 60 * 24); // Em dias
+            // Ajuste para considerar datas até a data atual
+            const adjustedAlphaSubmission = alphaSubmission > today ? today : alphaSubmission;
+            const adjustedDistributionEnd = distributionEnd > today ? today : distributionEnd;
+
+            const timeToAlpha = (adjustedAlphaSubmission - regressiveStart) / (1000 * 60 * 60 * 24); // Em dias
+            const timeToDistributionEnd = (adjustedDistributionEnd - regressiveStart) / (1000 * 60 * 60 * 24); // Em dias
 
             return {
                 releaseName: release.Release,
@@ -115,9 +274,10 @@
                 timeToAlpha: isNaN(timeToAlpha) ? null : timeToAlpha,
                 timeToDistributionEnd: isNaN(timeToDistributionEnd) ? null : timeToDistributionEnd
             };
+        }).filter(duration => {
+            const regressiveStart = new Date(releases.find(r => r.Release === duration.releaseName)['Início do regressivo']);
+            return regressiveStart <= today;
         });
-
-        return durations;
     }
 
     // Função para criar o gráfico de releases por mês (barras)
@@ -126,27 +286,24 @@
         const data = categories.map(month => releasesByMonth[month]);
 
         createChart('releasesByMonthChart', {
-            chart: {
-                type: 'column'
-            },
-            title: {
-                text: 'Releases por Mês'
+            chart: { type: 'column' },
+            title: { text: '' },
+            tooltip: {
+                headerFormat: '<span style="font-size:10px">{point.key}</span><br/>',
+                pointFormat: '<span style="color:{series.color}">●</span> {series.name}: <b>{point.y}</b><br/>',
+                valueSuffix: ' releases'
             },
             xAxis: {
-                categories: categories,
-                title: {
-                    text: 'Mês'
-                }
+                categories,
+                title: { text: 'Mês' }
             },
             yAxis: {
                 min: 0,
-                title: {
-                    text: 'Número de Releases'
-                }
+                title: { text: 'Número de Releases' }
             },
             series: [{
                 name: 'Releases',
-                data: data,
+                data,
                 color: '#36A2EB'
             }]
         });
@@ -158,50 +315,94 @@
         const data = categories.map(month => releasesByMonth[month]);
 
         createChart('releasesByMonthLineChart', {
-            chart: {
-                type: 'line'
-            },
-            title: {
-                text: 'Releases por Mês'
+            chart: { type: 'line' },
+            title: { text: '' },
+            tooltip: {
+                headerFormat: '<span style="font-size:10px">{point.key}</span><br/>',
+                pointFormat: '<span style="color:{series.color}">●</span> {series.name}: <b>{point.y}</b><br/>',
+                valueSuffix: ' releases'
             },
             xAxis: {
-                categories: categories,
-                title: {
-                    text: 'Mês'
-                }
+                categories,
+                title: { text: 'Mês' }
             },
             yAxis: {
                 min: 0,
-                title: {
-                    text: 'Número de Releases'
-                }
+                title: { text: 'Número de Releases' }
             },
             series: [{
                 name: 'Releases',
-                data: data,
+                data,
                 color: '#36A2EB'
             }]
         });
     }
 
-    // Função para contar releases por mês e plataforma
+    // Função para criar o gráfico spline com plot bands
+    function createSplinePlotBandsChart(releasesByMonth) {
+        const categories = Object.keys(releasesByMonth).sort();
+        const data = categories.map(month => releasesByMonth[month]);
+
+        // Definir plot bands para destacar períodos específicos
+        const plotBands = [
+            { // Primeiro semestre
+                from: Date.UTC(new Date(categories[0]).getFullYear(), 0, 1),
+                to: Date.UTC(new Date(categories[0]).getFullYear(), 5, 30),
+                color: 'rgba(68, 170, 213, 0.1)',
+                label: {
+                    text: '1º Semestre',
+                    style: { color: '#606060' }
+                }
+            },
+            { // Segundo semestre
+                from: Date.UTC(new Date(categories[0]).getFullYear(), 6, 1),
+                to: Date.UTC(new Date(categories[0]).getFullYear(), 11, 31),
+                color: 'rgba(0, 0, 0, 0)',
+                label: {
+                    text: '2º Semestre',
+                    style: { color: '#606060' }
+                }
+            }
+        ];
+
+        createChart('splinePlotBandsChart', {
+            chart: { type: 'spline' },
+            title: { text: '' },
+            tooltip: {
+                headerFormat: '<span style="font-size:10px">{point.key}</span><br/>',
+                pointFormat: '<span style="color:{series.color}">●</span> {series.name}: <b>{point.y}</b><br/>',
+                valueSuffix: ' releases'
+            },
+            xAxis: {
+                categories,
+                title: { text: 'Mês' },
+                plotBands
+            },
+            yAxis: {
+                min: 0,
+                title: { text: 'Número de Releases' }
+            },
+            series: [{
+                name: 'Releases',
+                data,
+                color: '#36A2EB'
+            }]
+        });
+    }
+
+    // Função para contar releases por mês e plataforma (até a data atual)
     function countReleasesByMonthAndPlatform(releases) {
         const data = {};
         const today = new Date();
 
         releases.forEach(release => {
             const date = new Date(release['Início do regressivo']);
-            if (!isNaN(date.getTime()) && date <= today) {
+            if (!isNaN(date) && date <= today) {
                 const monthYear = date.toISOString().slice(0, 7); // 'YYYY-MM'
                 const platform = release.Plataforma;
 
-                if (!data[monthYear]) {
-                    data[monthYear] = {};
-                }
-                if (!data[monthYear][platform]) {
-                    data[monthYear][platform] = 0;
-                }
-                data[monthYear][platform]++;
+                data[monthYear] = data[monthYear] || {};
+                data[monthYear][platform] = (data[monthYear][platform] || 0) + 1;
             }
         });
 
@@ -213,42 +414,94 @@
         const categories = Object.keys(data).sort();
         const platforms = [...new Set(Object.values(data).flatMap(monthData => Object.keys(monthData)))];
 
-        const series = platforms.map(platform => {
-            return {
-                name: platform,
-                data: categories.map(month => data[month][platform] || 0),
-                color: platform === 'Android' ? '#4CAF50' : '#2196F3'
-            };
-        });
+        const series = platforms.map(platform => ({
+            name: platform,
+            data: categories.map(month => data[month][platform] || 0),
+            color: platform === 'Android' ? '#4CAF50' : '#2196F3'
+        }));
 
         createChart('stackedBarChart', {
-            chart: {
-                type: 'column'
-            },
-            title: {
-                text: 'Releases por Mês e Plataforma'
+            chart: { type: 'column' },
+            title: { text: '' },
+            tooltip: {
+                headerFormat: '<span style="font-size:10px">{point.key}</span><br/>',
+                pointFormat: '{series.name}: <b>{point.y}</b><br/>Total: <b>{point.stackTotal}</b>',
+                valueSuffix: ' releases'
             },
             xAxis: {
-                categories: categories,
-                title: {
-                    text: 'Mês'
-                }
+                categories,
+                title: { text: 'Mês' }
             },
             yAxis: {
                 min: 0,
-                title: {
-                    text: 'Número de Releases'
-                },
-                stackLabels: {
-                    enabled: true
-                }
+                title: { text: 'Número de Releases' },
+                stackLabels: { enabled: true }
             },
             plotOptions: {
-                column: {
-                    stacking: 'normal'
+                column: { stacking: 'normal' }
+            },
+            series
+        });
+    }
+
+    // Função para criar o gráfico de calendário
+    function createCalendarChart(releases) {
+        const data = [];
+        const today = new Date();
+
+        releases.forEach(release => {
+            const date = new Date(release['Início do regressivo']);
+            if (!isNaN(date) && date <= today) {
+                const time = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+                data.push([time, 1]); // O valor '1' representa uma release naquele dia
+            }
+        });
+
+        createChart('calendarChart', {
+            chart: {
+                type: 'heatmap',
+                inverted: true,
+                marginLeft: 50,
+                height: 200
+            },
+            title: { text: '' },
+            xAxis: {
+                type: 'datetime',
+                visible: false
+            },
+            yAxis: {
+                title: { text: null },
+                labels: { enabled: false },
+                gridLineWidth: 0
+            },
+            colorAxis: {
+                min: 0,
+                stops: [
+                    [0, '#FFFFFF'],
+                    [0.5, '#36A2EB'],
+                    [1, '#003399']
+                ]
+            },
+            tooltip: {
+                formatter: function() {
+                    const date = Highcharts.dateFormat('%A, %e de %b de %Y', this.point.x);
+                    return `<b>${date}</b><br/>Releases: ${this.point.value}`;
                 }
             },
-            series: series
+            series: [{
+                name: 'Releases',
+                borderWidth: 1,
+                borderColor: '#EDEDED',
+                data,
+                dataLabels: {
+                    enabled: false
+                }
+            }],
+            plotOptions: {
+                heatmap: {
+                    colsize: 24 * 3600 * 1000 // Tamanho de um dia em milissegundos
+                }
+            }
         });
     }
 
@@ -258,27 +511,23 @@
         const data = durations.map(d => d.timeToAlpha);
 
         createChart('timeToAlphaChart', {
-            chart: {
-                type: 'column'
-            },
-            title: {
-                text: 'Tempo do Início do Regressivo até Envio Alpha'
+            chart: { type: 'column' },
+            title: { text: '' },
+            tooltip: {
+                headerFormat: '<span style="font-size:10px">{point.key}</span><br/>',
+                pointFormat: 'Dias até Envio Alpha: <b>{point.y:.1f} dias</b><br/>'
             },
             xAxis: {
-                categories: categories,
-                title: {
-                    text: 'Releases'
-                }
+                categories,
+                title: { text: 'Releases' }
             },
             yAxis: {
                 min: 0,
-                title: {
-                    text: 'Dias'
-                }
+                title: { text: 'Dias' }
             },
             series: [{
                 name: 'Dias até Envio Alpha',
-                data: data,
+                data,
                 colorByPoint: true,
                 colors: data.map(value => value <= 5 ? '#4CAF50' : '#F44336')
             }]
@@ -291,27 +540,23 @@
         const data = durations.map(d => d.timeToDistributionEnd);
 
         createChart('timeToDistributionEndChart', {
-            chart: {
-                type: 'column'
-            },
-            title: {
-                text: 'Tempo do Início do Regressivo até Fim da Distribuição'
+            chart: { type: 'column' },
+            title: { text: '' },
+            tooltip: {
+                headerFormat: '<span style="font-size:10px">{point.key}</span><br/>',
+                pointFormat: 'Dias até Fim da Distribuição: <b>{point.y:.1f} dias</b><br/>'
             },
             xAxis: {
-                categories: categories,
-                title: {
-                    text: 'Releases'
-                }
+                categories,
+                title: { text: 'Releases' }
             },
             yAxis: {
                 min: 0,
-                title: {
-                    text: 'Dias'
-                }
+                title: { text: 'Dias' }
             },
             series: [{
                 name: 'Dias até Fim da Distribuição',
-                data: data,
+                data,
                 colorByPoint: true,
                 colors: data.map(value => value <= 12 ? '#4CAF50' : '#F44336')
             }]
@@ -321,24 +566,33 @@
     // Funções auxiliares para processamento de dados
     function countReleaseStatus(releases) {
         const status = { Concluída: 0, Cancelada: 0, 'Em andamento': 0 };
+        const today = new Date();
+
         releases.forEach(release => {
-            if (release.Status === 'Concluída') status.Concluída++;
-            else if (release.Status === 'Cancelada') status.Cancelada++;
-            else status['Em andamento']++;
+            const regressiveStart = new Date(release['Início do regressivo']);
+            if (regressiveStart <= today) {
+                status[release.Status] = (status[release.Status] || 0) + 1;
+            }
         });
         return status;
     }
 
     function countPlatforms(releases) {
+        const today = new Date();
         return releases.reduce((count, release) => {
-            count[release.Plataforma] = (count[release.Plataforma] || 0) + 1;
+            const regressiveStart = new Date(release['Início do regressivo']);
+            if (regressiveStart <= today) {
+                count[release.Plataforma] = (count[release.Plataforma] || 0) + 1;
+            }
             return count;
         }, {});
     }
 
     function countCanceledByPlatform(releases) {
+        const today = new Date();
         return releases.reduce((count, release) => {
-            if (release.Status === 'Cancelada') {
+            const regressiveStart = new Date(release['Início do regressivo']);
+            if (regressiveStart <= today && release.Status === 'Cancelada') {
                 count[release.Plataforma] = (count[release.Plataforma] || 0) + 1;
             }
             return count;
@@ -348,66 +602,64 @@
     function calculateOKRProgress(releases) {
         const storeSubmissionTimes = [];
         const fullRolloutTimes = [];
+        const today = new Date();
 
         releases.forEach(release => {
             const regressiveStart = new Date(release['Início do regressivo']);
-            const alphaSubmission = new Date(release['Envio Alpha']);
-            const distributionEnd = new Date(release['Fim da distribuição']);
+            if (regressiveStart <= today) {
+                const alphaSubmission = new Date(release['Envio Alpha']);
+                const distributionEnd = new Date(release['Fim da distribuição']);
 
-            if (!isNaN(regressiveStart) && !isNaN(alphaSubmission)) {
-                storeSubmissionTimes.push((alphaSubmission - regressiveStart) / (1000 * 60 * 60 * 24));
-            }
+                const adjustedAlphaSubmission = alphaSubmission > today ? today : alphaSubmission;
+                const adjustedDistributionEnd = distributionEnd > today ? today : distributionEnd;
 
-            if (!isNaN(regressiveStart) && !isNaN(distributionEnd)) {
-                fullRolloutTimes.push((distributionEnd - regressiveStart) / (1000 * 60 * 60 * 24));
+                if (!isNaN(regressiveStart) && !isNaN(adjustedAlphaSubmission)) {
+                    storeSubmissionTimes.push((adjustedAlphaSubmission - regressiveStart) / (1000 * 60 * 60 * 24));
+                }
+
+                if (!isNaN(regressiveStart) && !isNaN(adjustedDistributionEnd)) {
+                    fullRolloutTimes.push((adjustedDistributionEnd - regressiveStart) / (1000 * 60 * 60 * 24));
+                }
             }
         });
 
         return {
-            storeSubmission: storeSubmissionTimes.reduce((a, b) => a + b, 0) / storeSubmissionTimes.length,
-            fullRollout: fullRolloutTimes.reduce((a, b) => a + b, 0) / fullRolloutTimes.length
+            storeSubmission: storeSubmissionTimes.length ? (storeSubmissionTimes.reduce((a, b) => a + b, 0) / storeSubmissionTimes.length) : 0,
+            fullRollout: fullRolloutTimes.length ? (fullRolloutTimes.reduce((a, b) => a + b, 0) / fullRolloutTimes.length) : 0
         };
     }
 
     // Funções para criar os gráficos restantes
     function createStatusChart(data) {
         createChart('statusChart', {
-            chart: {
-                type: 'pie'
-            },
-            title: {
-                text: 'Status das Releases'
+            chart: { type: 'pie' },
+            title: { text: '' },
+            tooltip: {
+                pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
             },
             series: [{
                 name: 'Releases',
                 colorByPoint: true,
-                data: Object.keys(data).map(key => ({
-                    name: key,
-                    y: data[key]
-                }))
+                data: Object.keys(data).map(key => ({ name: key, y: data[key] }))
             }]
         });
     }
 
     function createPlatformChart(data) {
         createChart('platformChart', {
-            chart: {
-                type: 'column'
-            },
-            title: {
-                text: 'Releases por Plataforma'
+            chart: { type: 'column' },
+            title: { text: '' },
+            tooltip: {
+                pointFormat: '{series.name}: <b>{point.y}</b>',
+                valueSuffix: ' releases'
             },
             xAxis: {
                 categories: Object.keys(data),
-                title: {
-                    text: 'Plataforma'
-                }
+                title: { text: 'Plataforma' }
             },
             yAxis: {
                 min: 0,
-                title: {
-                    text: 'Número de Releases'
-                }
+                title: { text: 'Número de Releases' }
             },
             series: [{
                 name: 'Releases',
@@ -420,17 +672,16 @@
 
     function createSuccessRateChart(data) {
         const total = Object.values(data).reduce((a, b) => a + b, 0);
-        const successRate = data.Concluída / total;
+        const successRate = data.Concluída / total || 0;
 
         createChart('successRateChart', {
-            chart: {
-                type: 'pie'
-            },
-            title: {
-                text: 'Taxa de Sucesso'
+            chart: { type: 'pie' },
+            title: { text: '' },
+            tooltip: {
+                pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
             },
             series: [{
-                name: 'Releases',
+                name: 'Taxa',
                 colorByPoint: true,
                 data: [
                     { name: 'Sucesso', y: successRate, color: '#4CAF50' },
@@ -442,19 +693,15 @@
 
     function createCanceledByPlatformChart(data) {
         createChart('canceledByPlatformChart', {
-            chart: {
-                type: 'pie'
-            },
-            title: {
-                text: 'Releases Canceladas por Plataforma'
+            chart: { type: 'pie' },
+            title: { text: '' },
+            tooltip: {
+                pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
             },
             series: [{
                 name: 'Canceladas',
                 colorByPoint: true,
-                data: Object.keys(data).map(key => ({
-                    name: key,
-                    y: data[key]
-                }))
+                data: Object.keys(data).map(key => ({ name: key, y: data[key] }))
             }]
         });
     }
@@ -466,12 +713,8 @@
 
     function createGaugeChart(containerId, value, target, titleText) {
         createChart(containerId, {
-            chart: {
-                type: 'solidgauge'
-            },
-            title: {
-                text: titleText
-            },
+            chart: { type: 'solidgauge' },
+            title: { text: '' },
             pane: {
                 center: ['50%', '85%'],
                 size: '140%',
@@ -490,78 +733,116 @@
             yAxis: {
                 min: 0,
                 max: target * 2,
+                title: {
+                    text: titleText,
+                    y: -70
+                },
                 stops: [
                     [value / (target * 2), value <= target ? '#4CAF50' : '#F44336']
                 ],
                 lineWidth: 0,
                 tickWidth: 0,
-                minorTickInterval: null,
-                labels: {
-                    enabled: false
-                }
+                labels: { enabled: false }
             },
             series: [{
                 name: 'Dias',
                 data: [value],
                 dataLabels: {
-                    format: '<div style="text-align:center"><span style="font-size:25px">{y}</span><br/><span style="font-size:12px;opacity:0.4">dias</span></div>'
+                    format: '<div style="text-align:center"><span style="font-size:25px">{y:.1f}</span><br/><span style="font-size:12px;opacity:0.4">dias</span></div>'
+                },
+                tooltip: {
+                    valueSuffix: ' dias'
                 }
-            }]
+            }],
+            credits: { enabled: false },
+            exporting: { enabled: false }
         });
     }
 
     function createTimeline(releases) {
-        const categories = releases.map(release => `${release.Release} (${release.Plataforma})`);
-        const data = releases.map(release => {
+        const today = new Date();
+        const validReleases = releases.filter(release => {
+            const regressiveStart = new Date(release['Início do regressivo']);
+            return regressiveStart <= today;
+        });
+
+        const categories = validReleases.map(release => `${release.Release} (${release.Plataforma})`);
+        const data = validReleases.map((release, index) => {
             const start = new Date(release['Início do regressivo']).getTime();
-            const end = new Date(release['Fim da distribuição']).getTime();
+            const endDate = new Date(release['Fim da distribuição']);
+            const end = endDate > today ? today.getTime() : endDate.getTime();
             return {
                 x: start,
                 x2: end,
-                y: categories.indexOf(`${release.Release} (${release.Plataforma})`)
+                y: index,
+                releaseName: release.Release
             };
         });
 
-        createChart('timeline', {
-            chart: {
-                type: 'xrange'
+        // Definir plot bands para destacar períodos específicos na timeline
+        const plotBands = [
+            {
+                color: 'rgba(68, 170, 213, 0.1)',
+                from: Date.UTC(today.getFullYear(), 0, 1), // Início do ano
+                to: Date.UTC(today.getFullYear(), 5, 30),  // Fim do primeiro semestre
+                label: {
+                    text: '1º Semestre',
+                    style: { color: '#606060' }
+                }
             },
-            title: {
-                text: 'Linha do Tempo de Releases'
+            {
+                color: 'rgba(68, 170, 213, 0.1)',
+                from: Date.UTC(today.getFullYear(), 6, 1), // Início do segundo semestre
+                to: Date.UTC(today.getFullYear(), 11, 31), // Fim do ano
+                label: {
+                    text: '2º Semestre',
+                    style: { color: '#606060' }
+                }
+            }
+        ];
+
+        createChart('timeline', {
+            chart: { type: 'xrange' },
+            title: { text: '' },
+            tooltip: {
+                formatter: function () {
+                    const start = Highcharts.dateFormat('%e %b %Y', this.point.x);
+                    const end = Highcharts.dateFormat('%e %b %Y', this.point.x2);
+                    return `<b>${this.point.releaseName}</b><br/>Início: ${start}<br/>Fim: ${end}`;
+                }
             },
             xAxis: {
-                type: 'datetime'
+                type: 'datetime',
+                title: { text: 'Data' },
+                plotBands
             },
             yAxis: {
-                categories: categories,
-                reversed: true
+                categories,
+                reversed: true,
+                title: { text: null }
             },
             series: [{
                 name: 'Releases',
                 borderColor: 'gray',
                 pointWidth: 20,
-                data: data,
+                data,
                 dataLabels: {
                     enabled: true,
-                    format: '{point.releaseName}'
+                    formatter: function() { return this.point.releaseName; }
                 }
-            }]
+            }],
+            credits: { enabled: false }
         });
     }
 
     // Função para processar os dados e criar os gráficos
     function processData(releases) {
-        // Funções auxiliares
         const statusData = countReleaseStatus(releases);
         const platformData = countPlatforms(releases);
         const canceledByPlatformData = countCanceledByPlatform(releases);
         const okrProgress = calculateOKRProgress(releases);
-
-        // Novas contagens
         const releasesByMonth = countReleasesByMonth(releases);
         const releasesByMonthAndPlatform = countReleasesByMonthAndPlatform(releases);
-
-        // Cálculo dos tempos para as metas
         const releaseDurations = calculateReleaseDurations(releases);
 
         // Criação de gráficos
@@ -571,11 +852,11 @@
         createCanceledByPlatformChart(canceledByPlatformData);
         createOKRCharts(okrProgress);
         createTimeline(releases);
-
         createReleasesByMonthChart(releasesByMonth);
         createReleasesByMonthLineChart(releasesByMonth);
+        createSplinePlotBandsChart(releasesByMonth);
         createStackedBarChart(releasesByMonthAndPlatform);
-
+        createCalendarChart(releases); // Novo gráfico adicionado aqui
         createTimeToAlphaChart(releaseDurations);
         createTimeToDistributionEndChart(releaseDurations);
     }
@@ -592,6 +873,6 @@
 
     // Inicializa o dashboard quando a página carrega
     window.addEventListener('load', initDashboard);
-    </script>
+</script>
 </body>
 </html>
